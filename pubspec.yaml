@@ -1,5 +1,5 @@
 name: result_command
-description: "A new Flutter package project."
+description: "A command pattern implementation for Dart and Flutter using result_dart package."
 version: 1.0.0-alpha.1
 repository: https://github.com/Flutterando/result_command
 
