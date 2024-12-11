@@ -46,7 +46,7 @@ abstract class Command<T extends Object> extends ChangeNotifier implements Value
   /// Clears the most recent action's result.
   void clearResult() {
     _result = null;
-    notifyListeners();
+    _setValue(IdleCommand<T>());
   }
 
   /// Execute the provided [action], notifying listeners and
@@ -58,11 +58,17 @@ abstract class Command<T extends Object> extends ChangeNotifier implements Value
     _result = null;
     _setValue(RuningCommand<T>());
 
-    _result = await action();
-    _result! //
-        .map(SuccessCommand.new)
-        .mapError(FailureCommand.new)
-        .fold(_setValue, (e) => _setValue(e as FailureCommand<T>));
+    try {
+      _result = await action();
+    } finally {
+      if (_result == null) {
+        _setValue(IdleCommand<T>());
+      } else {
+        _result! //
+            .map(SuccessCommand<T>.new)
+            .fold(_setValue, (e) => _setValue(FailureCommand<T>(e)));
+      }
+    }
   }
 }
 

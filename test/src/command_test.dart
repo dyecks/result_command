@@ -23,6 +23,23 @@ void main() {
 
     command.execute();
   });
+  test('command1 ...', () async {
+    AsyncResult<String> action(String value) async {
+      await Future.delayed(const Duration(seconds: 2));
+      return Success(value);
+    }
+
+    final command = Command1<String, String>(action);
+    expect(
+        command.toStream(),
+        emitsInOrder([
+          isA<IdleCommand>(),
+          isA<RuningCommand>(),
+          isA<SuccessCommand>(),
+        ]));
+
+    command.execute('Test');
+  });
 }
 
 // convert ValueListenable in Stream extension
