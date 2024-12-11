@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:result_command/src/command.dart';
 import 'package:result_dart/result_dart.dart';
@@ -10,13 +13,38 @@ void main() {
     }
 
     final command = Command0<String>(action);
-
-    command.addListener(() {
-      print(command.value);
-    });
+    expect(
+        command.toStream(),
+        emitsInOrder([
+          isA<IdleCommand>(),
+          isA<RuningCommand>(),
+          isA<SuccessCommand>(),
+        ]));
 
     command.execute();
-
-    await Future.delayed(const Duration(seconds: 5));
   });
+}
+
+// convert ValueListenable in Stream extension
+
+extension ValueListenableStream<T> on ValueListenable<T> {
+  Stream<T> toStream() {
+    late final StreamController<T> controller;
+    void listener() {
+      controller.add(value);
+    }
+
+    controller = StreamController<T>.broadcast(
+      onListen: () {
+        controller.add(value);
+        addListener(listener);
+      },
+      onCancel: () {
+        removeListener(listener);
+        controller.close();
+      },
+    );
+
+    return controller.stream;
+  }
 }

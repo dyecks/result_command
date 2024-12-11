@@ -37,7 +37,7 @@ abstract class Command<T extends Object> extends ChangeNotifier implements Value
 
   void _setValue(CommandSnapshot<T> newValue) {
     if (newValue == _value) return;
-    _value = value;
+    _value = newValue;
     notifyListeners();
   }
 
@@ -107,7 +107,7 @@ final class RuningCommand<T extends Object> extends CommandSnapshot<T> {
 final class FailureCommand<T extends Object> extends CommandSnapshot<T> {
   const FailureCommand(this.error);
 
-  final Object error;
+  final dynamic error;
 }
 
 final class SuccessCommand<T extends Object> extends CommandSnapshot<T> {
