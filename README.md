@@ -78,7 +78,7 @@ To simplify state management and improve code readability, the following getters
   bool get isSuccess => value is SuccessCommand<T>;
   ```
 
-- **`isFailure`**: Checks if the command execution was failed.
+- **`isFailure`**: Checks if the command execution failed.
   ```dart
   bool get isFailure => value is FailureCommand<T>;
   ```
