@@ -54,6 +54,39 @@ The state updates automatically as the command executes:
 
 ---
 
+## Getters for State Checks
+
+To simplify state management and improve code readability, the following getters are available:
+
+- **`isIdle`**: Checks if the command is in the idle state.
+  ```dart
+  bool get isIdle => value is IdleCommand<T>;
+  ```
+
+- **`isRunning`**: Checks if the command is currently running.
+  ```dart
+  bool get isRunning => value is RunningCommand<T>;
+  ```
+
+- **`isCancelled`**: Checks if the command has been cancelled.
+  ```dart
+  bool get isCancelled => value is CancelledCommand<T>;
+  ```
+
+- **`isSuccess`**: Checks if the command execution was successful.
+  ```dart
+  bool get isSuccess => value is SuccessCommand<T>;
+  ```
+
+- **`isFailure`**: Checks if the command execution was failed.
+  ```dart
+  bool get isFailure => value is FailureCommand<T>;
+  ```
+
+These getters allow you to write cleaner and more intuitive code when interacting with commands in your views or controllers.
+
+---
+
 ## Examples
 
 ### Example 1: Simple Command with No Arguments
@@ -68,10 +101,10 @@ final fetchGreetingCommand = Command0<String>(
 );
 
 fetchGreetingCommand.addListener(() {
-  if (fetchGreetingCommand.value.isSuccess) {
+  if (fetchGreetingCommand.value is SuccessCommand<String>) {
     final result = (fetchGreetingCommand.value as SuccessCommand<String>).value;
     print('Success: $result');
-  } else if (fetchGreetingCommand.value.isFailure) {
+  } else if (fetchGreetingCommand.value is FailureCommand<String>) {
     final error = (fetchGreetingCommand.value as FailureCommand<String>).error;
     print('Failure: $error');
   }
@@ -97,10 +130,10 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-  if (calculateSquareCommand.value.isSuccess) {
+  if (calculateSquareCommand.value is SuccessCommand<int>) {
     final result = (calculateSquareCommand.value as SuccessCommand<int>).value;
     print('Square: $result');
-  } else if (calculateSquareCommand.value.isFailure) {
+  } else if (calculateSquareCommand.value is FailureCommand<int>) {
     final error = (calculateSquareCommand.value as FailureCommand<int>).error;
     print('Error: $error');
   }
@@ -131,11 +164,11 @@ Widget build(BuildContext context) {
       ValueListenableBuilder<CommandState<bool>>(
         valueListenable: loginCommand,
         builder: (context, state, child) {
-          if (state.isRunning) {
+          if (state is RunningCommand<bool>) {
             return CircularProgressIndicator();
-          } else if (state.isSuccess) {
+          } else if (state is SuccessCommand<bool>) {
             return Text('Login Successful!');
-          } else if (state.isFailure) {
+          } else if (state is FailureCommand<bool>) {
             return Text('Login Failed: ${(state as FailureCommand).error}');
           }
           return ElevatedButton(
