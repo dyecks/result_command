@@ -53,6 +53,8 @@ abstract class Command<T extends Object> extends ChangeNotifier //
 
   bool get isSuccess => value is SuccessCommand<T>;
 
+  bool get isFailure => value is FailureCommand<T>;
+
   @override
   CommandState<T> get value => _value;
 
@@ -88,8 +90,7 @@ abstract class Command<T extends Object> extends ChangeNotifier //
   ///
   /// If the command is cancelled during execution, the result is ignored.
   Future<void> _execute(CommandAction0<T> action) async {
-    if (isRunning)
-      return; // Prevent multiple concurrent executions.
+    if (isRunning) return; // Prevent multiple concurrent executions.
     _setValue(RuningCommand<T>());
 
     Result<T>? result;

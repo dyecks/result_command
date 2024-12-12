@@ -68,10 +68,10 @@ final fetchGreetingCommand = Command0<String>(
 );
 
 fetchGreetingCommand.addListener(() {
-  if (fetchGreetingCommand.value is SuccessCommand<String>) {
+  if (fetchGreetingCommand.value.isSuccess) {
     final result = (fetchGreetingCommand.value as SuccessCommand<String>).value;
     print('Success: $result');
-  } else if (fetchGreetingCommand.value is FailureCommand<String>) {
+  } else if (fetchGreetingCommand.value.isFailure) {
     final error = (fetchGreetingCommand.value as FailureCommand<String>).error;
     print('Failure: $error');
   }
@@ -97,10 +97,10 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-  if (calculateSquareCommand.value is SuccessCommand<int>) {
+  if (calculateSquareCommand.value.isSuccess) {
     final result = (calculateSquareCommand.value as SuccessCommand<int>).value;
     print('Square: $result');
-  } else if (calculateSquareCommand.value is FailureCommand<int>) {
+  } else if (calculateSquareCommand.value.isFailure) {
     final error = (calculateSquareCommand.value as FailureCommand<int>).error;
     print('Error: $error');
   }
@@ -131,11 +131,11 @@ Widget build(BuildContext context) {
       ValueListenableBuilder<CommandState<bool>>(
         valueListenable: loginCommand,
         builder: (context, state, child) {
-          if (state is RunningCommand<bool>) {
+          if (state.isRunning) {
             return CircularProgressIndicator();
-          } else if (state is SuccessCommand<bool>) {
+          } else if (state.isSuccess) {
             return Text('Login Successful!');
-          } else if (state is FailureCommand<bool>) {
+          } else if (state.isFailure) {
             return Text('Login Failed: ${(state as FailureCommand).error}');
           }
           return ElevatedButton(
