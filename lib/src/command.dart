@@ -1,123 +1,190 @@
-// Copyright 2024 The Flutter team. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:result_dart/functions.dart';
 import 'package:result_dart/result_dart.dart';
 
-/// Defines a command action that returns a [Result] of type [T].
-/// Used by [Command0] for actions without arguments.
+/// A function that defines a command action with no arguments.
+/// The action returns an [AsyncResult] of type [T].
 typedef CommandAction0<T extends Object> = AsyncResult<T> Function();
 
-/// Defines a command action that returns a [Result] of type [T].
-/// Takes an argument of type [A].
-/// Used by [Command1] for actions with one argument.
+/// A function that defines a command action with one argument of type [A].
+/// The action returns an [AsyncResult] of type [T].
 typedef CommandAction1<T extends Object, A> = AsyncResult<T> Function(A);
 
-/// Facilitates interaction with a view model.
+/// A function that defines a command action with two arguments of types [A] and [B].
+/// The action returns an [AsyncResult] of type [T].
+typedef CommandAction2<T extends Object, A, B> = AsyncResult<T> Function(A, B);
+
+/// Represents a command that encapsulates a specific action to be executed.
 ///
-/// Encapsulates an action,
-/// exposes its running and error states,
-/// and ensures that it can't be launched again until it finishes.
+/// A [Command] maintains state transitions during its lifecycle, such as:
+/// - Idle: The command is not running.
+/// - Running: The command is currently executing an action.
+/// - Success: The action completed successfully with a result.
+/// - Failure: The action failed with an error.
+/// - Cancelled: The action was explicitly cancelled.
 ///
-/// Use [Command0] for actions without arguments.
-/// Use [Command1] for actions with one argument.
+/// Commands can notify listeners about state changes and handle cancellations.
 ///
-/// Actions must return a [Result] of type [T].
+/// Use [Command0] for actions with no arguments,
+/// [Command1] for actions with one argument, and [Command2] for actions with two arguments.
 ///
-/// Consume the action result by listening to changes,
-/// then call to [clearResult] when the state is consumed.
-abstract class Command<T extends Object> extends ChangeNotifier implements ValueListenable<CommandSnapshot<T>> {
-  CommandSnapshot<T> _value = IdleCommand<T>();
+/// The generic parameter [T] defines the type of result returned by the command.
+abstract class Command<T extends Object> extends ChangeNotifier //
+    implements
+        ValueListenable<CommandState<T>> {
+  /// Creates a new [Command] with an optional [onCancel] callback.
+  ///
+  /// The [onCancel] callback is invoked when the command is explicitly cancelled.
+  Command([this.onCancel]);
+
+  /// Callback executed when the command is cancelled.
+  final void Function()? onCancel;
+
+  /// The current state of the command.
+  CommandState<T> _value = IdleCommand<T>();
 
   @override
-  CommandSnapshot<T> get value => _value;
+  CommandState<T> get value => _value;
 
-  void _setValue(CommandSnapshot<T> newValue) {
+  /// Cancels the execution of the command.
+  ///
+  /// If the command is in the [RuningCommand] state, the [onCancel] callback is invoked,
+  /// and the state transitions to [CancelledCommand].
+  void cancel() {
+    if (value is RuningCommand<T>) {
+      onCancel?.call();
+      _setValue(CancelledCommand<T>());
+    }
+  }
+
+  /// Sets the current state of the command and notifies listeners.
+  void _setValue(CommandState<T> newValue) {
     if (newValue == _value) return;
     _value = newValue;
     notifyListeners();
   }
 
-  Result<T>? _result;
-
-  /// Clears the most recent action's result.
-  void clearResult() {
-    _result = null;
+  /// Resets the command state to [IdleCommand].
+  ///
+  /// This clears the current state, allowing the command to be reused.
+  void reset() {
     _setValue(IdleCommand<T>());
   }
 
-  /// Execute the provided [action], notifying listeners and
-  /// setting the running and result states as necessary.
+  /// Executes the given [action] and updates the command state accordingly.
+  ///
+  /// The state transitions to [RuningCommand] during execution,
+  /// and to either [SuccessCommand] or [FailureCommand] upon completion.
+  ///
+  /// If the command is cancelled during execution, the result is ignored.
   Future<void> _execute(CommandAction0<T> action) async {
-    // Ensure the action can't launch multiple times.
-    // e.g. avoid multiple taps on button
-    if (value is RuningCommand<T>) return;
-    _result = null;
+    if (value is RuningCommand<T>) return; // Prevent multiple concurrent executions.
     _setValue(RuningCommand<T>());
 
+    Result<T>? result;
     try {
-      _result = await action();
+      result = await action();
     } finally {
-      if (_result == null) {
+      if (result == null) {
         _setValue(IdleCommand<T>());
       } else {
-        _result! //
+        final newValue = result //
             .map(SuccessCommand<T>.new)
-            .fold(_setValue, (e) => _setValue(FailureCommand<T>(e)));
+            .mapError(FailureCommand<T>.new)
+            .fold(identity, identity);
+        if (value is RuningCommand) {
+          _setValue(newValue);
+        }
       }
     }
   }
 }
 
-/// A [Command] that accepts no arguments.
+/// A command that executes an action without any arguments.
+///
+/// The generic parameter [T] defines the type of result returned by the action.
 final class Command0<T extends Object> extends Command<T> {
-  /// Creates a [Command0] with the provided [CommandAction0].
-  Command0(this._action);
+  /// Creates a [Command0] with the specified [action] and optional [onCancel] callback.
+  Command0(this._action, {void Function()? onCancel}) : super(onCancel);
 
+  /// The action to be executed.
   final CommandAction0<T> _action;
 
-  /// Executes the action.
+  /// Executes the action and updates the command state.
   Future<void> execute() async {
     await _execute(() => _action());
   }
 }
 
-/// A [Command] that accepts one argument.
+/// A command that executes an action with one argument.
+///
+/// The generic parameters [T] and [A] define the result type and the argument type, respectively.
 final class Command1<T extends Object, A> extends Command<T> {
-  /// Creates a [Command1] with the provided [CommandAction1].
-  Command1(this._action);
+  /// Creates a [Command1] with the specified [action] and optional [onCancel] callback.
+  Command1(this._action, {void Function()? onCancel}) : super(onCancel);
 
+  /// The action to be executed.
   final CommandAction1<T, A> _action;
 
-  /// Executes the action with the specified [argument].
+  /// Executes the action with the given [argument] and updates the command state.
   Future<void> execute(A argument) async {
     await _execute(() => _action(argument));
   }
 }
 
-sealed class CommandSnapshot<T extends Object> {
-  const CommandSnapshot();
+/// A command that executes an action with two arguments.
+///
+/// The generic parameters [T], [A], and [B] define the result type and the types of the two arguments.
+final class Command2<T extends Object, A, B> extends Command<T> {
+  /// Creates a [Command2] with the specified [action] and optional [onCancel] callback.
+  Command2(this._action, {void Function()? onCancel}) : super(onCancel);
+
+  /// The action to be executed.
+  final CommandAction2<T, A, B> _action;
+
+  /// Executes the action with the given [argument1] and [argument2],
+  /// and updates the command state.
+  Future<void> execute(A argument1, B argument2) async {
+    await _execute(() => _action(argument1, argument2));
+  }
 }
 
-final class IdleCommand<T extends Object> extends CommandSnapshot<T> {
+/// Base class representing the state of a command.
+sealed class CommandState<T extends Object> {
+  const CommandState();
+}
+
+/// Represents the idle state of a command (not running).
+final class IdleCommand<T extends Object> extends CommandState<T> {
   const IdleCommand();
 }
 
-final class RuningCommand<T extends Object> extends CommandSnapshot<T> {
+/// Represents the cancelled state of a command.
+final class CancelledCommand<T extends Object> extends CommandState<T> {
+  const CancelledCommand();
+}
+
+/// Represents the running state of a command.
+final class RuningCommand<T extends Object> extends CommandState<T> {
   const RuningCommand();
 }
 
-final class FailureCommand<T extends Object> extends CommandSnapshot<T> {
+/// Represents a command that failed to execute successfully.
+final class FailureCommand<T extends Object> extends CommandState<T> {
+  /// Creates a [FailureCommand] with the given [error].
   const FailureCommand(this.error);
 
-  final dynamic error;
+  /// The error that occurred during execution.
+  final Exception error;
 }
 
-final class SuccessCommand<T extends Object> extends CommandSnapshot<T> {
+/// Represents a command that executed successfully.
+final class SuccessCommand<T extends Object> extends CommandState<T> {
+  /// Creates a [SuccessCommand] with the given [value].
   const SuccessCommand(this.value);
 
+  /// The result of the successful execution.
   final T value;
 }
