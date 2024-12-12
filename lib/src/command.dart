@@ -45,6 +45,14 @@ abstract class Command<T extends Object> extends ChangeNotifier //
   /// The current state of the command.
   CommandState<T> _value = IdleCommand<T>();
 
+  bool get isIdle => value is IdleCommand<T>;
+
+  bool get isRunning => value is RuningCommand<T>;
+
+  bool get isCancelled => value is CancelledCommand<T>;
+
+  bool get isSuccess => value is SuccessCommand<T>;
+
   @override
   CommandState<T> get value => _value;
 
@@ -53,7 +61,7 @@ abstract class Command<T extends Object> extends ChangeNotifier //
   /// If the command is in the [RuningCommand] state, the [onCancel] callback is invoked,
   /// and the state transitions to [CancelledCommand].
   void cancel() {
-    if (value is RuningCommand<T>) {
+    if (isRunning) {
       onCancel?.call();
       _setValue(CancelledCommand<T>());
     }
@@ -80,7 +88,8 @@ abstract class Command<T extends Object> extends ChangeNotifier //
   ///
   /// If the command is cancelled during execution, the result is ignored.
   Future<void> _execute(CommandAction0<T> action) async {
-    if (value is RuningCommand<T>) return; // Prevent multiple concurrent executions.
+    if (isRunning)
+      return; // Prevent multiple concurrent executions.
     _setValue(RuningCommand<T>());
 
     Result<T>? result;
@@ -94,7 +103,7 @@ abstract class Command<T extends Object> extends ChangeNotifier //
             .map(SuccessCommand<T>.new)
             .mapError(FailureCommand<T>.new)
             .fold(identity, identity);
-        if (value is RuningCommand) {
+        if (isRunning) {
           _setValue(newValue);
         }
       }
