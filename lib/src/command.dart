@@ -52,37 +52,12 @@ mixin CommandHistoryManager<T extends Object> {
   }
 }
 
-/// Notifies state changes of the command.
-mixin CommandStateNotifier<T extends Object> on ChangeNotifier {
-  /// A [StreamController] that broadcasts state changes to external observers.
-  final StreamController<CommandState<T>> _stateController =
-      StreamController<CommandState<T>>.broadcast();
-
-  /// Provides a stream of [CommandState] changes, allowing external listeners
-  /// to react to state updates in real-time.
-  Stream<CommandState<T>> get stateStream => _stateController.stream;
-
-  /// Notifies listeners and external observers of a state change.
-  void notifyStateChange(CommandState<T> state) {
-    if (!_stateController.isClosed) {
-      _stateController.add(state);
-      notifyListeners();
-    }
-  }
-
-  @override
-  void dispose() {
-    _stateController.close(); // Close the stream when the object is disposed.
-    super.dispose();
-  }
-}
-
 /// Represents a generic command with lifecycle and execution.
 ///
 /// This class supports state management, notifications, and execution
 /// with optional cancellation and history tracking.
 abstract class Command<T extends Object> extends ChangeNotifier
-    with CommandHistoryManager<T>, CommandStateNotifier<T>
+    with CommandHistoryManager<T>
     implements ValueListenable<CommandState<T>> {
   /// Callback executed when the command is cancelled.
   final void Function()? onCancel;
@@ -178,15 +153,14 @@ abstract class Command<T extends Object> extends ChangeNotifier
 
   /// Sets the current state of the command and notifies listeners.
   ///
-  /// Additionally, emits the new state to the [stateStream] for external observers
-  /// and records the change in the state history with optional metadata.
+  /// Additionally, records the change in the state history with optional metadata.
   void _setValue(CommandState<T> newValue, {Map<String, dynamic>? metadata}) {
     if (newValue.runtimeType == _value.runtimeType && stateHistory.isNotEmpty) {
       return;
     }
     _value = newValue;
     addHistoryEntry(CommandHistoryEntry(state: newValue, metadata: metadata));
-    notifyStateChange(newValue);
+    notifyListeners(); // Notify listeners using ChangeNotifier.
   }
 }
 

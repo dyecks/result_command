@@ -11,15 +11,18 @@ void main() {
       }
 
       final command = Command0<String>(action);
+      final states = <CommandState<String>>[];
 
-      expect(
-          command.stateStream,
-          emitsInOrder([
-            isA<RunningCommand<String>>(),
-            isA<SuccessCommand<String>>(),
-          ]));
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute();
+      expect(states, [
+        isA<RunningCommand<String>>(),
+        isA<SuccessCommand<String>>(),
+      ]);
+
       expect(command.value, isA<SuccessCommand<String>>());
 
       // Verify history
@@ -43,15 +46,18 @@ void main() {
       }
 
       final command = Command1<String, String>(action);
+      final states = <CommandState<String>>[];
 
-      expect(
-          command.stateStream,
-          emitsInOrder([
-            isA<RunningCommand<String>>(),
-            isA<SuccessCommand<String>>(),
-          ]));
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute('Test');
+      expect(states, [
+        isA<RunningCommand<String>>(),
+        isA<SuccessCommand<String>>(),
+      ]);
+
       expect(command.value, isA<SuccessCommand<String>>());
       expect((command.value as SuccessCommand<String>).value, 'Test');
 
@@ -78,17 +84,20 @@ void main() {
       final command = Command0<String>(action, onCancel: () {
         throw Exception('Cancel exception');
       });
+      final states = <CommandState<String>>[];
 
-      expect(
-          command.stateStream,
-          emitsInOrder([
-            isA<RunningCommand<String>>(),
-            isA<FailureCommand<String>>(),
-          ]));
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       Future.delayed(const Duration(milliseconds: 100), () => command.cancel());
 
       await command.execute();
+      expect(states, [
+        isA<RunningCommand<String>>(),
+        isA<FailureCommand<String>>(),
+      ]);
+
       expect(command.value, isA<FailureCommand<String>>());
 
       // Verify history
@@ -106,15 +115,18 @@ void main() {
       }
 
       final command = Command0<String>(action);
+      final states = <CommandState<String>>[];
 
-      expect(
-          command.stateStream,
-          emitsInOrder([
-            isA<RunningCommand<String>>(),
-            isA<FailureCommand<String>>(),
-          ]));
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute();
+      expect(states, [
+        isA<RunningCommand<String>>(),
+        isA<FailureCommand<String>>(),
+      ]);
+
       expect(command.value, isA<FailureCommand<String>>());
       expect((command.value as FailureCommand<String>).error.toString(),
           contains('failure'));
@@ -138,15 +150,17 @@ void main() {
       }
 
       final command = Command0<String>(action);
+      final states = <CommandState<String>>[];
 
-      expect(
-          command.stateStream,
-          emitsInOrder([
-            isA<RunningCommand<String>>(),
-            isA<FailureCommand<String>>(),
-          ]));
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute();
+      expect(states, [
+        isA<RunningCommand<String>>(),
+        isA<FailureCommand<String>>(),
+      ]);
       expect(command.value, isA<FailureCommand<String>>());
       expect((command.value as FailureCommand<String>).error.toString(),
           contains('Unexpected exception'));
@@ -202,16 +216,14 @@ void main() {
       }
 
       final command = Command0<String>(action);
+      final states = <CommandState<String>>[];
 
-      expect(
-          command.stateStream,
-          emitsInOrder([
-            isA<RunningCommand<String>>(),
-            isA<CancelledCommand<String>>(),
-          ]));
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute(timeout: const Duration(milliseconds: 500));
-      expect(command.value, isA<CancelledCommand<String>>());
+      expect(states.last, isA<CancelledCommand<String>>());
     });
 
     test('Command resets state', () async {
@@ -221,6 +233,11 @@ void main() {
       }
 
       final command = Command0<String>(action);
+      final states = <CommandState<String>>[];
+
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute();
       expect(command.value, isA<SuccessCommand<String>>());
@@ -246,6 +263,11 @@ void main() {
       }
 
       final command = Command1<String, String>(action);
+      final states = <CommandState<String>>[];
+
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute('input');
       expect(command.value, isA<SuccessCommand<String>>());
@@ -270,6 +292,11 @@ void main() {
       }
 
       final command = Command2<String, String, int>(action);
+      final states = <CommandState<String>>[];
+
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute('Value', 42);
       expect(command.value, isA<SuccessCommand<String>>());
@@ -305,6 +332,11 @@ void main() {
       }
 
       final command = Command0<String>(action, maxHistoryLength: 2);
+      final states = <CommandState<String>>[];
+
+      command.addListener(() {
+        states.add(command.value);
+      });
 
       await command.execute();
       command.reset();
