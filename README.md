@@ -54,6 +54,39 @@ The state updates automatically as the command executes:
 
 ---
 
+## Getters for State Checks
+
+To simplify state management and improve code readability, the following getters are available:
+
+- **`isIdle`**: Checks if the command is in the idle state.
+  ```dart
+  bool get isIdle => value is IdleCommand<T>;
+  ```
+
+- **`isRunning`**: Checks if the command is currently running.
+  ```dart
+  bool get isRunning => value is RunningCommand<T>;
+  ```
+
+- **`isCancelled`**: Checks if the command has been cancelled.
+  ```dart
+  bool get isCancelled => value is CancelledCommand<T>;
+  ```
+
+- **`isSuccess`**: Checks if the command execution was successful.
+  ```dart
+  bool get isSuccess => value is SuccessCommand<T>;
+  ```
+
+- **`isFailure`**: Checks if the command execution failed.
+  ```dart
+  bool get isFailure => value is FailureCommand<T>;
+  ```
+
+These getters allow you to write cleaner and more intuitive code when interacting with commands in your views or controllers.
+
+---
+
 ## Examples
 
 ### Example 1: Simple Command with No Arguments
