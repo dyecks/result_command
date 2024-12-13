@@ -97,7 +97,7 @@ abstract class Command<T extends Object> extends ChangeNotifier
 
   bool get isIdle => value is IdleCommand<T>;
 
-  bool get isRunning => value is RuningCommand<T>;
+  bool get isRunning => value is RunningCommand<T>;
 
   bool get isCancelled => value is CancelledCommand<T>;
 

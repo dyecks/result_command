@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:result_command/src/command.dart';
 import 'package:result_dart/result_dart.dart';
