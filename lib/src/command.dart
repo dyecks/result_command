@@ -95,6 +95,16 @@ abstract class Command<T extends Object> extends ChangeNotifier
   /// The current state of the command.
   CommandState<T> _value = IdleCommand<T>();
 
+  bool get isIdle => value is IdleCommand<T>;
+
+  bool get isRunning => value is RuningCommand<T>;
+
+  bool get isCancelled => value is CancelledCommand<T>;
+
+  bool get isSuccess => value is SuccessCommand<T>;
+
+  bool get isFailure => value is FailureCommand<T>;
+
   @override
   CommandState<T> get value => _value;
 
@@ -103,7 +113,7 @@ abstract class Command<T extends Object> extends ChangeNotifier
   /// If the command is in the [RunningCommand] state, the [onCancel] callback is invoked,
   /// and the state transitions to [CancelledCommand].
   void cancel({Map<String, dynamic>? metadata}) {
-    if (value is RunningCommand<T>) {
+    if (isRunning) {
       try {
         onCancel?.call();
       } catch (e) {
@@ -132,7 +142,7 @@ abstract class Command<T extends Object> extends ChangeNotifier
   /// Optionally accepts a [timeout] duration to limit the execution time of the action.
   /// If the action times out, the command is cancelled and transitions to [FailureCommand].
   Future<void> _execute(CommandAction0<T> action, {Duration? timeout}) async {
-    if (value is RunningCommand<T>) {
+    if (isRunning) {
       return;
     } // Prevent multiple concurrent executions.
     _setValue(RunningCommand<T>(), metadata: {'status': 'Execution started'});
@@ -162,7 +172,7 @@ abstract class Command<T extends Object> extends ChangeNotifier
               .map(SuccessCommand<T>.new)
               .mapError(FailureCommand<T>.new)
               .fold(identity, identity);
-          if (value is RunningCommand<T>) {
+          if (isRunning) {
             _setValue(newValue);
           }
         }
