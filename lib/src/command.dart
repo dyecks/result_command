@@ -148,7 +148,7 @@ abstract class Command<T extends Object> extends ChangeNotifier
     _setValue(RunningCommand<T>(), metadata: {'status': 'Execution started'});
     bool hasError = false;
 
-    Result<T>? result;
+    late Result<T> result;
     try {
       if (timeout != null) {
         result = await action().timeout(timeout, onTimeout: () {
@@ -164,17 +164,13 @@ abstract class Command<T extends Object> extends ChangeNotifier
           metadata: {'error': '$e', 'stackTrace': stackTrace.toString()});
       return;
     } finally {
-      if ((result == null) && !hasError) {
-        _setValue(IdleCommand<T>());
-      } else {
-        if (!hasError) {
-          final newValue = result!
-              .map(SuccessCommand<T>.new)
-              .mapError(FailureCommand<T>.new)
-              .fold(identity, identity);
-          if (isRunning) {
-            _setValue(newValue);
-          }
+      if (!hasError) {
+        final newValue = result
+            .map(SuccessCommand<T>.new)
+            .mapError(FailureCommand<T>.new)
+            .fold(identity, identity);
+        if (isRunning) {
+          _setValue(newValue);
         }
       }
     }
@@ -185,7 +181,9 @@ abstract class Command<T extends Object> extends ChangeNotifier
   /// Additionally, emits the new state to the [stateStream] for external observers
   /// and records the change in the state history with optional metadata.
   void _setValue(CommandState<T> newValue, {Map<String, dynamic>? metadata}) {
-    if ((newValue == _value) && stateHistory.isNotEmpty) return;
+    if (newValue.runtimeType == _value.runtimeType && stateHistory.isNotEmpty) {
+      return;
+    }
     _value = newValue;
     addHistoryEntry(CommandHistoryEntry(state: newValue, metadata: metadata));
     notifyStateChange(newValue);

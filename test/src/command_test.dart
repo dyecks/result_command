@@ -164,6 +164,37 @@ void main() {
       expect(historyString[2], contains('Unexpected exception'));
     });
 
+    test('Command sets state to CancelledCommand with metadata', () async {
+      AsyncResult<String> action() async {
+        await Future.delayed(const Duration(seconds: 2));
+        return const Success('cancelled with metadata');
+      }
+
+      final command = Command0<String>(action);
+
+      command.execute();
+
+      command.cancel(metadata: {'customKey': 'customValue'});
+      expect(command.value, isA<CancelledCommand<String>>());
+      expect(command.stateHistory.last.metadata,
+          containsPair('customKey', 'customValue'));
+    });
+
+    test('Command cancels manually and updates state to CancelledCommand',
+        () async {
+      AsyncResult<String> action() async {
+        await Future.delayed(const Duration(seconds: 2));
+        return const Success('manual cancellation');
+      }
+
+      final command = Command0<String>(action);
+
+      command.execute();
+      command.cancel();
+      expect(command.value, isA<CancelledCommand<String>>());
+      expect(command.stateHistory.last.state, isA<CancelledCommand<String>>());
+    });
+
     test('Command with timeout in _execute', () async {
       AsyncResult<String> action() async {
         await Future.delayed(const Duration(seconds: 2));
@@ -256,6 +287,17 @@ void main() {
       expect(historyString[2], contains('SuccessCommand'));
     });
 
+    test('Command does not add duplicate states to history', () async {
+      final command =
+          Command0<String>(() async => const Success('duplicate state'));
+
+      command.reset();
+      command.reset();
+
+      expect(command.stateHistory.length, 1);
+      expect(command.stateHistory.first.state, isA<IdleCommand<String>>());
+    });
+
     test('Command history respects maxHistoryLength', () async {
       AsyncResult<String> action() async {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -285,6 +327,54 @@ void main() {
 
       // Dispose the notifier and verify no exceptions occur
       expect(() => notifier.dispose(), returnsNormally);
+    });
+
+    test('Command isIdle returns true when state is IdleCommand', () {
+      final command = Command0<String>(() async => const Success('idle'));
+      expect(command.isIdle, isTrue);
+      expect(command.isCancelled, isFalse);
+      expect(command.isSuccess, isFalse);
+      expect(command.isFailure, isFalse);
+    });
+
+    test('Command isCancelled returns true when state is CancelledCommand',
+        () async {
+      AsyncResult<String> action() async {
+        await Future.delayed(const Duration(seconds: 2));
+        return const Success('CancelledCommand');
+      }
+
+      final command = Command0<String>(action);
+
+      command.execute();
+      command.cancel();
+      expect(command.isIdle, isFalse);
+      expect(command.isCancelled, isTrue);
+      expect(command.isSuccess, isFalse);
+      expect(command.isFailure, isFalse);
+    });
+
+    test('Command isSuccess returns true when state is SuccessCommand',
+        () async {
+      final command = Command0<String>(() async => const Success('success'));
+
+      await command.execute();
+      expect(command.isIdle, isFalse);
+      expect(command.isCancelled, isFalse);
+      expect(command.isSuccess, isTrue);
+      expect(command.isFailure, isFalse);
+    });
+
+    test('Command isFailure returns true when state is FailureCommand',
+        () async {
+      final command =
+          Command0<String>(() async => Failure(Exception('failure')));
+
+      await command.execute();
+      expect(command.isIdle, isFalse);
+      expect(command.isCancelled, isFalse);
+      expect(command.isSuccess, isFalse);
+      expect(command.isFailure, isTrue);
     });
   });
 }
