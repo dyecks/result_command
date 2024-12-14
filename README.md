@@ -127,11 +127,12 @@ final fetchGreetingCommand = Command0<String>(
 );
 
 fetchGreetingCommand.addListener(() {
-  if (fetchGreetingCommand.value is SuccessCommand<String>) {
-    final result = (fetchGreetingCommand.value as SuccessCommand<String>).value;
+  final snapshot = fetchGreetingCommand.value;
+  if (snapshot is Success<String>) {
+    final result = snapshot.value;
     print('Success: $result');
-  } else if (fetchGreetingCommand.value is FailureCommand<String>) {
-    final error = (fetchGreetingCommand.value as FailureCommand<String>).error;
+  } else if (snapshot is FailureCommand<String>) {
+    final error = snapshot.error;
     print('Failure: $error');
   }
 });
@@ -154,9 +155,12 @@ final fetchGreetingCommand = Command0<String>(
   },
 );
 
-fetchGreetingCommand.execute(timeout: Duration(seconds: 2)).catchError((error) {
-  print('Error: $error'); // "Error: Command timed out"
-});
+fetchGreetingCommand //
+      .execute(timeout: Duration(seconds: 2))
+      .catchError((error) {
+          print('Error: $error'); // "Error: Command timed out"
+      },
+);
 ```
 
 ---
@@ -175,11 +179,12 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-  if (calculateSquareCommand.value is SuccessCommand<int>) {
-    final result = (calculateSquareCommand.value as SuccessCommand<int>).value;
+  final snapshot = calculateSquareCommand.value;
+  if (snapshot is SuccessCommand<int>) {
+    final result = snapshot.value;
     print('Square: $result');
-  } else if (calculateSquareCommand.value is FailureCommand<int>) {
-    final error = (calculateSquareCommand.value as FailureCommand<int>).error;
+  } else if (snapshot is FailureCommand<int>) {
+    final error = snapshot.error;
     print('Error: $error');
   }
 });
@@ -233,16 +238,19 @@ Widget build(BuildContext context) {
 
 Cancel long-running commands gracefully:
 ```dart
+
+Isolate? _uploadIsolate;
+
+void _uploadAction() {
+  //  uploading code...
+}
+
 final uploadCommand = Command0<void>(
   () async {
-    for (int i = 0; i < 10; i++) {
-      await Future.delayed(Duration(seconds: 1));
-      print('Uploading: ${i + 1}0%');
-    }
-    return Success();
+    _uploadIsolate = await Isolate.spawn(_uploadAction, []);
   },
   onCancel: () {
-    print('Upload cancelled!');
+   _uploadIsolate.kill();
   },
 );
 
@@ -255,38 +263,7 @@ Future.delayed(Duration(seconds: 3), () {
 });
 ```
 
----
-
-### Example 6: Using Stream
-
-Using Stream to Monitor State Changes:
-```dart
-
-  final command = Command0<String>(
-    () async {
-      await Future.delayed(Duration(seconds: 2));
-      return Result.success("Action completed successfully");
-    },
-  );
-
-  command.stateStream.listen((state) {
-    if (state is IdleCommand) {
-      print("Command is idle.");
-    } else if (state is RunningCommand) {
-      print("Command is running.");
-    } else if (state is SuccessCommand<String>) {
-      print("Command succeeded with result: ${state.value}");
-    } else if (state is FailureCommand<String>) {
-      print("Command failed with error: ${state.error}");
-    } else if (state is CancelledCommand) {
-      print("Command was cancelled.");
-    }
-  });
-
-  command.execute();
-```
-
----  
+--- 
 
 ## Benefits for Your Team
 
