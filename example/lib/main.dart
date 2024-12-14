@@ -68,7 +68,7 @@ class MyHomePage extends StatelessWidget {
             child: const Icon(Icons.add),
           );
         },
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }

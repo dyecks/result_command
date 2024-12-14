@@ -4,6 +4,23 @@
 
 ---
 
+## Getting Started
+
+1. Add the package to your `pubspec.yaml`:
+   ```yaml
+   dependencies:
+     result_command: x.x.x
+     result_dart: 2.x.x
+   ```
+
+2. Wrap your actions in commands:
+   - Use pre-defined `Command` types to encapsulate your logic.
+   - Attach listeners to update your UI dynamically.
+
+3. Execute commands from your UI and enjoy the benefits of encapsulated logic and state tracking.
+
+---
+
 ## Why Use Result Command?
 
 1. **Encapsulation**: Wrap your business logic into reusable commands.
@@ -273,21 +290,7 @@ Future.delayed(Duration(seconds: 3), () {
 
 ---
 
-## Getting Started
 
-1. Add the package to your `pubspec.yaml`:
-   ```yaml
-   dependencies:
-     result_command: ^1.0.0
-   ```
-
-2. Wrap your actions in commands:
-   - Use pre-defined `Command` types to encapsulate your logic.
-   - Attach listeners to update your UI dynamically.
-
-3. Execute commands from your UI and enjoy the benefits of encapsulated logic and state tracking.
-
----
 
 ## Contribute
 
