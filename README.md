@@ -1,4 +1,3 @@
-
 # Result Command
 
 **Result Command** is a lightweight package that brings the **Command Pattern** to Flutter, allowing you to encapsulate actions, track their execution state, and manage results with clarity. Perfect for simplifying complex workflows, ensuring robust error handling, and keeping your UI reactive.
@@ -10,8 +9,10 @@
 1. **Encapsulation**: Wrap your business logic into reusable commands.
 2. **State Tracking**: Automatically manage states like `Idle`, `Running`, `Success`, `Failure`, and `Cancelled`.
 3. **Error Handling**: Centralize how you handle successes and failures using the intuitive `Result` API.
-4. **Cancellation Support**: Cancel long-running tasks when needed.
-5. **UI Integration**: React to command state changes directly in your Flutter widgets.
+4. **State History**: Track state transitions with optional metadata.
+5. **Timeout Support**: Specify execution time limits for commands.
+6. **Cancellation Support**: Cancel long-running tasks when needed.
+7. **UI Integration**: React to command state changes directly in your Flutter widgets.
 
 ---
 
@@ -22,6 +23,7 @@ At its core, **Result Command** lets you define reusable actions (commands) that
 - **Executes an action** (e.g., API call, user input validation).
 - **Tracks its state** (`Idle`, `Running`, etc.).
 - **Notifies listeners** when the state changes.
+- **Maintains a history** of states and transitions.
 - **Returns a result** (`Success` or `Failure`) using the `Result` API.
 
 ---
@@ -51,6 +53,30 @@ print(command.value); // Outputs: SuccessCommand<String>
 The state updates automatically as the command executes:
 - Use `addListener` for manual handling.
 - Use `ValueListenableBuilder` to bind the state to your UI.
+
+## State History (`CommandHistory`)
+
+Each command tracks a configurable history of its states, useful for debugging, auditing, and behavioral analysis.
+
+### Configuring the History
+
+Set the maximum length of the history when creating a command:
+
+```dart
+final command = Command0<String>(
+  () async => const Success('Done'),
+  maxHistoryLength: 5,
+);
+```
+
+### Accessing the History
+
+Access the history with `stateHistory`:
+
+```dart
+final history = command.stateHistory;
+history.forEach(print);
+```
 
 ---
 
@@ -116,7 +142,26 @@ fetchGreetingCommand.execute();
 
 ---
 
-### Example 2: Command with Arguments
+### Example 2: Simple Command with Timeout
+
+Commands now support a timeout for execution:
+
+```dart
+final fetchGreetingCommand = Command0<String>(
+  () async {
+    await Future.delayed(Duration(seconds: 5)); // Simulating a delay.
+    return Success('Hello, World!');
+  },
+);
+
+fetchGreetingCommand.execute(timeout: Duration(seconds: 2)).catchError((error) {
+  print('Error: $error'); // "Error: Command timed out"
+});
+```
+
+---
+
+### Example 3: Command with Arguments
 
 Pass input to your command's action:
 ```dart
@@ -145,7 +190,7 @@ calculateSquareCommand.execute(4);
 
 ---
 
-### Example 3: Binding State to the UI
+### Example 4: Binding State to the UI
 
 Use `ValueListenableBuilder` to update the UI automatically:
 ```dart
@@ -184,7 +229,7 @@ Widget build(BuildContext context) {
 
 ---
 
-### Example 4: Cancellation
+### Example 5: Cancellation
 
 Cancel long-running commands gracefully:
 ```dart
@@ -211,6 +256,37 @@ Future.delayed(Duration(seconds: 3), () {
 ```
 
 ---
+
+### Example 6: Using Stream
+
+Using Stream to Monitor State Changes:
+```dart
+
+  final command = Command0<String>(
+    () async {
+      await Future.delayed(Duration(seconds: 2));
+      return Result.success("Action completed successfully");
+    },
+  );
+
+  command.stateStream.listen((state) {
+    if (state is IdleCommand) {
+      print("Command is idle.");
+    } else if (state is RunningCommand) {
+      print("Command is running.");
+    } else if (state is SuccessCommand<String>) {
+      print("Command succeeded with result: ${state.value}");
+    } else if (state is FailureCommand<String>) {
+      print("Command failed with error: ${state.error}");
+    } else if (state is CancelledCommand) {
+      print("Command was cancelled.");
+    }
+  });
+
+  command.execute();
+```
+
+---  
 
 ## Benefits for Your Team
 
