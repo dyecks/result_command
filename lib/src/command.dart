@@ -13,7 +13,9 @@ part 'types.dart';
 ///
 /// This class supports state management, notifications, and execution
 /// with optional cancellation and history tracking.
-abstract class Command<T extends Object> extends ChangeNotifier with CommandHistoryManager<T> implements ValueListenable<CommandState<T>> {
+abstract class Command<T extends Object> extends ChangeNotifier
+    with CommandHistoryManager<T>
+    implements ValueListenable<CommandState<T>> {
   /// Callback executed when the command is cancelled.
   final void Function()? onCancel;
 
@@ -25,14 +27,19 @@ abstract class Command<T extends Object> extends ChangeNotifier with CommandHist
   /// The current state of the command.
   CommandState<T> _value = IdleCommand<T>();
 
+  ///[isIdle]: Checks if the command is in the idle state.
   bool get isIdle => value is IdleCommand<T>;
 
+  ///[isRunning]: Checks if the command is currently running.
   bool get isRunning => value is RunningCommand<T>;
 
+  ///[isCancelled]: Checks if the command has been cancelled.
   bool get isCancelled => value is CancelledCommand<T>;
 
+  ///[isSuccess]:Checks if the command execution was successful.
   bool get isSuccess => value is SuccessCommand<T>;
 
+  ///[isFailure]: Checks if the command execution failed.
   bool get isFailure => value is FailureCommand<T>;
 
   @override
@@ -47,10 +54,12 @@ abstract class Command<T extends Object> extends ChangeNotifier with CommandHist
       try {
         onCancel?.call();
       } catch (e) {
-        _setValue(FailureCommand<T>(e is Exception ? e : Exception('$e')), metadata: metadata);
+        _setValue(FailureCommand<T>(e is Exception ? e : Exception('$e')),
+            metadata: metadata);
         return;
       }
-      _setValue(CancelledCommand<T>(), metadata: metadata ?? {'reason': 'Manually cancelled'});
+      _setValue(CancelledCommand<T>(),
+          metadata: metadata ?? {'reason': 'Manually cancelled'});
     }
   }
 
@@ -58,7 +67,8 @@ abstract class Command<T extends Object> extends ChangeNotifier with CommandHist
   ///
   /// This clears the current state, allowing the command to be reused.
   void reset({Map<String, dynamic>? metadata}) {
-    _setValue(IdleCommand<T>(), metadata: metadata ?? {'reason': 'Command reset'});
+    _setValue(IdleCommand<T>(),
+        metadata: metadata ?? {'reason': 'Command reset'});
   }
 
   /// Executes the given [action] and updates the command state accordingly.
@@ -87,11 +97,15 @@ abstract class Command<T extends Object> extends ChangeNotifier with CommandHist
       }
     } catch (e, stackTrace) {
       hasError = true;
-      _setValue(FailureCommand<T>(Exception('Unexpected error: $e')), metadata: {'error': '$e', 'stackTrace': stackTrace.toString()});
+      _setValue(FailureCommand<T>(Exception('Unexpected error: $e')),
+          metadata: {'error': '$e', 'stackTrace': stackTrace.toString()});
       return;
     } finally {
       if (!hasError) {
-        final newValue = result.map(SuccessCommand<T>.new).mapError(FailureCommand<T>.new).fold(identity, identity);
+        final newValue = result
+            .map(SuccessCommand<T>.new)
+            .mapError(FailureCommand<T>.new)
+            .fold(identity, identity);
         if (isRunning) {
           _setValue(newValue);
         }
@@ -118,7 +132,8 @@ final class Command0<T extends Object> extends Command<T> {
   final CommandAction0<T> _action;
 
   /// Creates a [Command0] with the specified [action] and optional [onCancel] callback.
-  Command0(this._action, {void Function()? onCancel, int maxHistoryLength = 10}) : super(onCancel, maxHistoryLength);
+  Command0(this._action, {void Function()? onCancel, int maxHistoryLength = 10})
+      : super(onCancel, maxHistoryLength);
 
   /// Executes the action and updates the command state.
   Future<void> execute({Duration? timeout}) async {
@@ -132,7 +147,8 @@ final class Command1<T extends Object, A> extends Command<T> {
   final CommandAction1<T, A> _action;
 
   /// Creates a [Command1] with the specified [action] and optional [onCancel] callback.
-  Command1(this._action, {void Function()? onCancel, int maxHistoryLength = 10}) : super(onCancel, maxHistoryLength);
+  Command1(this._action, {void Function()? onCancel, int maxHistoryLength = 10})
+      : super(onCancel, maxHistoryLength);
 
   /// Executes the action with the given [argument] and updates the command state.
   Future<void> execute(A argument, {Duration? timeout}) async {
@@ -146,7 +162,8 @@ final class Command2<T extends Object, A, B> extends Command<T> {
   final CommandAction2<T, A, B> _action;
 
   /// Creates a [Command2] with the specified [action] and optional [onCancel] callback.
-  Command2(this._action, {void Function()? onCancel, int maxHistoryLength = 10}) : super(onCancel, maxHistoryLength);
+  Command2(this._action, {void Function()? onCancel, int maxHistoryLength = 10})
+      : super(onCancel, maxHistoryLength);
 
   /// Executes the action with the given [argument1] and [argument2],
   /// and updates the command state.

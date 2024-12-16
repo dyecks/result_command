@@ -37,7 +37,8 @@ mixin CommandHistoryManager<T extends Object> {
   }
 
   /// Provides read-only access to the state change history.
-  List<CommandHistoryEntry<T>> get stateHistory => List.unmodifiable(_stateHistory);
+  List<CommandHistoryEntry<T>> get stateHistory =>
+      List.unmodifiable(_stateHistory);
 
   /// Adds a new entry to the history and ensures the history length limit.
   void addHistoryEntry(CommandHistoryEntry<T> entry) {
