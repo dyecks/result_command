@@ -1,3 +1,6 @@
+## 1.1.2
+* FIX: documentation
+
 ## 1.1.1
 * FIX: documentation
 
