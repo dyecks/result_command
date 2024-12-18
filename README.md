@@ -343,7 +343,7 @@ calculateSquareCommand.execute(4);
 ```
 
 
-#### Minimal Usage: Handling Only Success State
+#### Minimal Usage: Handling Only Success State and orElse
 ```dart
 
 final calculateSquareCommand = Command1<int, int>(
