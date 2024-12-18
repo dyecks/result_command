@@ -408,5 +408,70 @@ void main() {
       expect(command.isSuccess, isFalse);
       expect(command.isFailure, isTrue);
     });
+
+    test(
+        'map() handles failure state correctly, returning the exception message',
+        () async {
+      final command =
+          Command0<String>(() async => Failure(Exception('failure')));
+
+      await command.execute();
+
+      final result = command.map(
+        data: (_) => 'none',
+        running: () => 'running',
+        error: (exception) => exception.toString(),
+      );
+
+      expect(result, 'Exception: failure');
+    });
+
+    test('map() correctly handles success state, returning the success value',
+        () async {
+      final command = Command0<String>(() async => const Success('some'));
+
+      await command.execute();
+
+      final result = command.map(
+        data: (value) => value,
+        running: () => 'running',
+        error: (exception) => exception.toString(),
+      );
+
+      expect(result, 'some');
+    });
+
+    test(
+        'map() correctly handles success state with input parameter, returning the success value',
+        () async {
+      final command = Command1<String, String>(
+        (String text) async => const Success('some'),
+      );
+
+      await command.execute('param');
+
+      final result = command.map(
+        data: (value) => value,
+        running: () => 'running',
+        error: (exception) => exception.toString(),
+      );
+
+      expect(result, 'some');
+    });
+
+    test(
+        'map() returns the default value when no state matches and orElse is provided',
+        () async {
+      final command = Command0<String>(() async => Failure(Exception('none')));
+
+      await command.execute();
+
+      final result = command.map(
+        data: (value) => value == 'otherValue',
+        orElse: () => 'defaultValue',
+      );
+
+      expect(result, 'defaultValue');
+    });
   });
 }

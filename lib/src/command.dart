@@ -124,6 +124,52 @@ abstract class Command<T extends Object> extends ChangeNotifier
     addHistoryEntry(CommandHistoryEntry(state: newValue, metadata: metadata));
     notifyListeners(); // Notify listeners using ChangeNotifier.
   }
+
+  /// Maps the current state to a value of type [R] based on the object's state.
+  ///
+  /// - [data]: Called when the state represents success, receiving a value of type [T].
+  /// - [error]: Called when the state represents failure, receiving an [Exception?].
+  ///   Optional; if not provided, the failure state will not be handled.
+  /// - [running]: Called when the state represents a running operation. Optional;
+  ///   if not provided, the running state will not be handled.
+  /// - [orElse]: Called if the state does not match any of the predefined states
+  ///   (`running`, `failure`, or `success`). Optional.
+  ///
+  /// Returns the result of the callback corresponding to the current state or
+  /// the result of [orElse] if provided and no state matches.
+  ///
+  /// If neither [error], [running], nor [orElse] are provided and the state is
+  /// not `success`, the function returns `null`.
+  ///
+  /// Example:
+  /// ```dart
+  /// final result = command.map<String>(
+  ///   data: (value) => 'Success: $value',
+  ///   error: (e) => 'Error: ${e?.message}',
+  ///   running: () => 'Running',
+  ///   orElse: () => 'Unknown state',
+  /// );
+  /// ```
+  R? map<R>({
+    required R Function(T value) data,
+    R Function(Exception? exception)? error,
+    R Function()? running,
+    R Function()? orElse,
+  }) {
+    if (isRunning && running != null) {
+      return running();
+    }
+
+    if (isFailure && error != null) {
+      return error((value as FailureCommand).error);
+    }
+
+    if (isSuccess) {
+      return data((value as SuccessCommand).value as T);
+    }
+
+    return orElse?.call();
+  }
 }
 
 /// A command that executes an action without any arguments.

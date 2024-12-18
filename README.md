@@ -282,6 +282,99 @@ Future.delayed(Duration(seconds: 3), () {
 
 --- 
 
+### Example 5: using the map function
+
+Cancel long-running commands gracefully:
+```dart
+
+final calculateSquareCommand = Command1<int, int>(
+      (number) async {
+    if (number < 0) {
+      return Failure(Exception('Negative numbers are not allowed.'));
+    }
+    return Success(number * number);
+  },
+);
+
+calculateSquareCommand.addListener(() {
+    String? message = calculateSquareCommand.map<String>(
+        data: (value) => 'Square: $value',
+        error: (exception) => 'Error: ${exception?.message}',
+        running: () => 'Calculating...',
+    );
+
+    // Display the message in a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message ?? '')),
+    );
+});
+// Execute the command with input
+calculateSquareCommand.execute(4);
+```
+
+#### Handling Unknown States with orElse
+
+```dart
+
+final calculateSquareCommand = Command1<int, int>(
+      (number) async {
+    if (number < 0) {
+      return Failure(Exception('Negative numbers are not allowed.'));
+    }
+    return Success(number * number);
+  },
+);
+
+calculateSquareCommand.addListener(() {
+    String? message = calculateSquareCommand.map<String>(
+        data: (value) => 'Square: $value',
+        error: (exception) => 'Error: ${exception?.message}',
+        orElse: () => 'Unknown state',
+    );
+
+    // Display the message in a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message ?? '')),
+    );
+});
+// Execute the command with input
+calculateSquareCommand.execute(4);
+```
+
+
+#### Minimal Usage: Handling Only Success State
+```dart
+
+final calculateSquareCommand = Command1<int, int>(
+      (number) async {
+    if (number < 0) {
+      return Failure(Exception('Negative numbers are not allowed.'));
+    }
+    return Success(number * number);
+  },
+);
+
+calculateSquareCommand.addListener(() {
+    final message = calculateSquareCommand.map<String>(
+        data: (value) => 'Square: $value',
+    );
+
+    // Display the message in a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message ?? '')),
+    );
+});
+// Execute the command with input
+calculateSquareCommand.execute(4);
+```
+
+**Notes**
+ - The function ensures type safety by requiring `data to handle the `success` state explicitly.
+ - The `orElse` callback is useful for dealing with unexpected states or adding default behavior.
+ - The `null` return value is possible only when no callback is matched and `orElse` is not provided.
+
+----
+
 ## Benefits for Your Team
 
 - **Simplified Collaboration**: Encapsulation makes it easier for teams to work independently on UI and business logic.
