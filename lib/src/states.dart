@@ -22,7 +22,7 @@ sealed class CommandState<T extends Object> {
   ///
   /// Example:
   /// ```dart
-  /// final result = command.map<String>(
+  /// final result = command.value.map<String>(
   ///   data: (value) => 'Success: $value',
   ///   failure: (e) => 'Error: ${e?.message}',
   ///   cancelled: () => 'Cancelled',
