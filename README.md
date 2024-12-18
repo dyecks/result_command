@@ -282,6 +282,95 @@ Future.delayed(Duration(seconds: 3), () {
 
 --- 
 
+### Example 5: using the map function
+
+Cancel long-running commands gracefully:
+```dart
+
+final calculateSquareCommand = Command1<int, int>(
+      (number) async {
+    if (number < 0) {
+      return Failure(Exception('Negative numbers are not allowed.'));
+    }
+    return Success(number * number);
+  },
+);
+
+calculateSquareCommand.addListener(() {
+    final message = calculateSquareCommand.value.when<String>(
+        data: (value) => 'Square: $value',
+        failure: (exception) => 'Error: ${exception?.message}',
+        running: () => 'Calculating...',
+        orElse: () => 'default value',
+    );
+
+    // Display the message in a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+    );
+});
+// Execute the command with input
+calculateSquareCommand.execute(4);
+```
+
+```dart
+
+Widget build(BuildContext context) {
+  return Column(
+    children: [
+      ValueListenableBuilder<CommandState<bool>>(
+        valueListenable: loginCommand,
+        builder: (context, state, child) {
+          return state.when(
+            data: (_) => const Text('Login Successful!'),
+            running: () => const CircularProgressIndicator(),
+            failure: (error) => Text('Login Failed: $error'),
+            orElse: () => ElevatedButton(
+              onPressed: () => loginCommand.execute('admin', 'password'),
+              child: Text('Login'),
+            ),
+          );
+        },
+      ),
+    ],
+  );
+}
+```
+
+
+#### Minimal Usage: Handling Only Success State and orElse
+```dart
+
+final calculateSquareCommand = Command1<int, int>(
+      (number) async {
+    if (number < 0) {
+      return Failure(Exception('Negative numbers are not allowed.'));
+    }
+    return Success(number * number);
+  },
+);
+
+calculateSquareCommand.addListener(() {
+    final message = calculateSquareCommand.value.when<String>(
+        data: (value) => 'Square: $value',
+        orElse: () => 'default value',
+    );
+
+    // Display the message in a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+    );
+});
+// Execute the command with input
+calculateSquareCommand.execute(4);
+```
+
+**Notes**
+ - The function ensures type safety by requiring `data to handle the `success` state explicitly.
+ - The `orElse` callback is useful for dealing with unexpected states or adding default behavior.
+
+----
+
 ## Benefits for Your Team
 
 - **Simplified Collaboration**: Encapsulation makes it easier for teams to work independently on UI and business logic.
