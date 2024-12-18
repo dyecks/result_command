@@ -368,7 +368,6 @@ calculateSquareCommand.execute(4);
 **Notes**
  - The function ensures type safety by requiring `data to handle the `success` state explicitly.
  - The `orElse` callback is useful for dealing with unexpected states or adding default behavior.
- - The `null` return value is possible only when no callback is matched and `orElse` is not provided.
 
 ----
 
