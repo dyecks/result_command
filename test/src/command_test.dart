@@ -420,7 +420,8 @@ void main() {
       final result = command.map(
         data: (_) => 'none',
         running: () => 'running',
-        error: (exception) => exception.toString(),
+        failure: (exception) => exception.toString(),
+        orElse: () => 'default value',
       );
 
       expect(result, 'Exception: failure');
@@ -435,7 +436,8 @@ void main() {
       final result = command.map(
         data: (value) => value,
         running: () => 'running',
-        error: (exception) => exception.toString(),
+        failure: (exception) => exception.toString(),
+        orElse: () => 'default value',
       );
 
       expect(result, 'some');
@@ -453,7 +455,8 @@ void main() {
       final result = command.map(
         data: (value) => value,
         running: () => 'running',
-        error: (exception) => exception.toString(),
+        failure: (exception) => exception.toString(),
+        orElse: () => 'default value',
       );
 
       expect(result, 'some');
@@ -466,12 +469,12 @@ void main() {
 
       await command.execute();
 
-      final result = command.map(
-        data: (value) => value == 'otherValue',
-        orElse: () => 'defaultValue',
+      final result = command.map<String>(
+        data: (value) => 'otherValue',
+        orElse: () => 'default value',
       );
 
-      expect(result, 'defaultValue');
+      expect(result, 'default value');
     });
   });
 }

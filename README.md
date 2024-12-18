@@ -297,15 +297,16 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-    String? message = calculateSquareCommand.map<String>(
+    final message = calculateSquareCommand.map<String>(
         data: (value) => 'Square: $value',
-        error: (exception) => 'Error: ${exception?.message}',
+        failure: (exception) => 'Error: ${exception?.message}',
         running: () => 'Calculating...',
+        orElse: () => 'default value',
     );
 
     // Display the message in a snackbar
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message ?? '')),
+        SnackBar(content: Text(message)),
     );
 });
 // Execute the command with input
@@ -326,15 +327,15 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-    String? message = calculateSquareCommand.map<String>(
+    final message = calculateSquareCommand.map<String>(
         data: (value) => 'Square: $value',
-        error: (exception) => 'Error: ${exception?.message}',
-        orElse: () => 'Unknown state',
+        failure: (exception) => 'Error: ${exception?.message}',
+        orElse: () => 'default value',
     );
 
     // Display the message in a snackbar
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message ?? '')),
+        SnackBar(content: Text(message)),
     );
 });
 // Execute the command with input
@@ -357,11 +358,12 @@ final calculateSquareCommand = Command1<int, int>(
 calculateSquareCommand.addListener(() {
     final message = calculateSquareCommand.map<String>(
         data: (value) => 'Square: $value',
+        orElse: () => 'default value',
     );
 
     // Display the message in a snackbar
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message ?? '')),
+        SnackBar(content: Text(message)),
     );
 });
 // Execute the command with input
