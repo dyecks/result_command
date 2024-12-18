@@ -22,7 +22,7 @@ sealed class CommandState<T extends Object> {
   ///
   /// Example:
   /// ```dart
-  /// final result = command.value.map<String>(
+  /// final result = command.value.when<String>(
   ///   data: (value) => 'Success: $value',
   ///   failure: (e) => 'Error: ${e?.message}',
   ///   cancelled: () => 'Cancelled',
@@ -33,7 +33,7 @@ sealed class CommandState<T extends Object> {
   ///
   /// If any of the optional parameters (`failure`, `cancelled`, `running`) are missing, you must provide [orElse]
   /// to ensure a valid fallback is available.
-  R map<R>({
+  R when<R>({
     required R Function(T value) data,
     R Function(Exception? exception)? failure,
     R Function()? cancelled,

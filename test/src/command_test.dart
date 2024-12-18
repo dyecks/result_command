@@ -417,7 +417,7 @@ void main() {
 
       await command.execute();
 
-      final result = command.value.map(
+      final result = command.value.when(
         data: (_) => 'none',
         running: () => 'running',
         failure: (exception) => exception.toString(),
@@ -433,7 +433,7 @@ void main() {
 
       await command.execute();
 
-      final result = command.value.map(
+      final result = command.value.when(
         data: (value) => value,
         running: () => 'running',
         failure: (exception) => exception.toString(),
@@ -452,7 +452,7 @@ void main() {
 
       await command.execute('param');
 
-      final result = command.value.map(
+      final result = command.value.when(
         data: (value) => value,
         running: () => 'running',
         failure: (exception) => exception.toString(),
@@ -469,7 +469,7 @@ void main() {
 
       await command.execute();
 
-      final result = command.value.map<String>(
+      final result = command.value.when<String>(
         data: (value) => 'otherValue',
         orElse: () => 'default value',
       );
