@@ -297,7 +297,7 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-    final message = calculateSquareCommand.map<String>(
+    final message = calculateSquareCommand.value.map<String>(
         data: (value) => 'Square: $value',
         failure: (exception) => 'Error: ${exception?.message}',
         running: () => 'Calculating...',
@@ -313,33 +313,28 @@ calculateSquareCommand.addListener(() {
 calculateSquareCommand.execute(4);
 ```
 
-#### Handling Unknown States with orElse
-
 ```dart
 
-final calculateSquareCommand = Command1<int, int>(
-      (number) async {
-    if (number < 0) {
-      return Failure(Exception('Negative numbers are not allowed.'));
-    }
-    return Success(number * number);
-  },
-);
-
-calculateSquareCommand.addListener(() {
-    final message = calculateSquareCommand.map<String>(
-        data: (value) => 'Square: $value',
-        failure: (exception) => 'Error: ${exception?.message}',
-        orElse: () => 'default value',
-    );
-
-    // Display the message in a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-    );
-});
-// Execute the command with input
-calculateSquareCommand.execute(4);
+Widget build(BuildContext context) {
+  return Column(
+    children: [
+      ValueListenableBuilder<CommandState<bool>>(
+        valueListenable: loginCommand,
+        builder: (context, state, child) {
+          return state.map(
+            data: (_) => const Text('Login Successful!'),
+            running: () => const CircularProgressIndicator(),
+            failure: (error) => Text('Login Failed: $error'),
+            orElse: () => ElevatedButton(
+              onPressed: () => loginCommand.execute('admin', 'password'),
+              child: Text('Login'),
+            ),
+          );
+        },
+      ),
+    ],
+  );
+}
 ```
 
 
@@ -356,7 +351,7 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-    final message = calculateSquareCommand.map<String>(
+    final message = calculateSquareCommand.value.map<String>(
         data: (value) => 'Square: $value',
         orElse: () => 'default value',
     );

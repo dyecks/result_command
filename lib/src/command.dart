@@ -124,51 +124,6 @@ abstract class Command<T extends Object> extends ChangeNotifier
     addHistoryEntry(CommandHistoryEntry(state: newValue, metadata: metadata));
     notifyListeners(); // Notify listeners using ChangeNotifier.
   }
-
-  /// Maps the current state to a value of type [R] based on the object's state.
-  ///
-  /// This method allows you to handle different states of an object (`Idle`, `Cancelled`, `Running`, `Failure`, and `Success`),
-  /// and map each state to a corresponding value of type [R]. If no handler for a specific state is provided, the fallback
-  /// function [orElse] will be invoked.
-  ///
-  /// - [data]: Called when the state represents success, receiving a value of type [T] (the successful result).
-  /// - [failure]: Called when the state represents failure, receiving an [Exception?]. Optional.
-  /// - [cancelled]: Called when the state represents cancellation. Optional.
-  /// - [running]: Called when the state represents a running operation. Optional.
-  /// - [orElse]: A fallback function that is called when the state does not match any of the provided states.
-  ///   It is required and will be used when any of the other parameters are not provided or when no state matches.
-  ///
-  /// Returns a value of type [R] based on the state of the object. If no matching state handler is provided, the fallback
-  /// function [orElse] will be called.
-  ///
-  /// Example:
-  /// ```dart
-  /// final result = command.map<String>(
-  ///   data: (value) => 'Success: $value',
-  ///   failure: (e) => 'Error: ${e?.message}',
-  ///   cancelled: () => 'Cancelled',
-  ///   running: () => 'Running',
-  ///   orElse: () => 'Unknown state', // Required fallback function
-  /// );
-  /// ```
-  ///
-  /// If any of the optional parameters (`failure`, `cancelled`, `running`) are missing, you must provide [orElse]
-  /// to ensure a valid fallback is available.
-  R map<R>({
-    required R Function(T value) data,
-    R Function(Exception? exception)? failure,
-    R Function()? cancelled,
-    R Function()? running,
-    required Function() orElse,
-  }) {
-    return switch (value) {
-      IdleCommand<T>() => orElse.call(),
-      CancelledCommand<T>() => cancelled?.call() ?? orElse(),
-      RunningCommand<T>() => running?.call() ?? orElse(),
-      FailureCommand<T>(:final error) => failure?.call(error) ?? orElse(),
-      SuccessCommand<T>(:final value) => data.call(value) ?? orElse(),
-    };
-  }
 }
 
 /// A command that executes an action without any arguments.
