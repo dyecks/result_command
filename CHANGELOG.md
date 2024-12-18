@@ -1,3 +1,6 @@
+## 1.2.0
+* ADDEd: when operator
+
 ## 1.1.2
 * FIX: documentation
 
