@@ -297,7 +297,7 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-    final message = calculateSquareCommand.value.map<String>(
+    final message = calculateSquareCommand.value.when<String>(
         data: (value) => 'Square: $value',
         failure: (exception) => 'Error: ${exception?.message}',
         running: () => 'Calculating...',
@@ -321,7 +321,7 @@ Widget build(BuildContext context) {
       ValueListenableBuilder<CommandState<bool>>(
         valueListenable: loginCommand,
         builder: (context, state, child) {
-          return state.map(
+          return state.when(
             data: (_) => const Text('Login Successful!'),
             running: () => const CircularProgressIndicator(),
             failure: (error) => Text('Login Failed: $error'),
@@ -351,7 +351,7 @@ final calculateSquareCommand = Command1<int, int>(
 );
 
 calculateSquareCommand.addListener(() {
-    final message = calculateSquareCommand.value.map<String>(
+    final message = calculateSquareCommand.value.when<String>(
         data: (value) => 'Square: $value',
         orElse: () => 'default value',
     );
