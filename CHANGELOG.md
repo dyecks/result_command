@@ -1,3 +1,6 @@
+## 1.3.0
+* ADDED: Global Observer Command State Listener
+
 ## 1.2.0
 * ADDEd: when operator
 

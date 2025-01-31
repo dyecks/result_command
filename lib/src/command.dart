@@ -9,6 +9,8 @@ part 'implementations.dart';
 part 'states.dart';
 part 'types.dart';
 
+void Function(CommandState state)? _defaultObserverListener;
+
 /// Represents a generic command with lifecycle and execution.
 ///
 /// This class supports state management, notifications, and execution
@@ -22,6 +24,13 @@ abstract class Command<T extends Object> extends ChangeNotifier
   Command([this.onCancel, int maxHistoryLength = 10]) : super() {
     initializeHistoryManager(maxHistoryLength);
     _setValue(IdleCommand<T>(), metadata: {'reason': 'Command created'});
+  }
+
+  /// Sets the default observer listener for all commands.
+  /// This listener is called whenever the state of any command changes.
+  /// This can be useful for logging, debugging, or global state management.
+  static void setObserverListener(void Function(CommandState state) listener) {
+    _defaultObserverListener = listener;
   }
 
   /// The current state of the command.
@@ -121,6 +130,7 @@ abstract class Command<T extends Object> extends ChangeNotifier
       return;
     }
     _value = newValue;
+    _defaultObserverListener?.call(newValue);
     addHistoryEntry(CommandHistoryEntry(state: newValue, metadata: metadata));
     notifyListeners(); // Notify listeners using ChangeNotifier.
   }

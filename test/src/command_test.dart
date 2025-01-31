@@ -476,5 +476,34 @@ void main() {
 
       expect(result, 'default value');
     });
+
+    test('Global Observable', () {
+      final command1 = Command0<String>(() async => const Success('success 1'));
+      final command2 = Command0<String>(
+          () async => const Failure(AppException('success 2')));
+
+      final expectedValues = [
+        isA<RunningCommand<String>>(),
+        isA<SuccessCommand<String>>(),
+        isA<RunningCommand<String>>(),
+        isA<FailureCommand<String>>(),
+      ];
+      var index = 0;
+
+      Command.setObserverListener(expectAsync1(
+        max: expectedValues.length,
+        (value) {
+          expect(value, expectedValues[index++]);
+        },
+      ));
+
+      command1.execute().then((_) => command2.execute());
+    });
   });
+}
+
+class AppException implements Exception {
+  final String message;
+
+  const AppException(this.message);
 }

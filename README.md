@@ -130,6 +130,24 @@ These getters allow you to write cleaner and more intuitive code when interactin
 
 ---
 
+## Observer
+  
+Sets the default observer listener for all commands.
+This listener is called whenever the state of any command changes. 
+This can be useful for logging, debugging, or global state management.
+
+
+```dart
+main(){
+
+  Command.setObserverListener((state) {
+    print(state);
+  });
+
+  runApp(MainApp());
+}
+```
+
 ## Examples
 
 ### Example 1: Simple Command with No Arguments
