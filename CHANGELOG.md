@@ -1,24 +1,26 @@
+## 2.0.0
+* ADDED: Cache methods `getCachedSuccess()`, `getCachedFailure()`.
+* ADDED: Improved documentation.
+* ADDED: Bumped Dart SDK version.
+
 ## 1.3.0
-* ADDED: Global Observer Command State Listener
+* ADDED: Global observer command state listener.
 
 ## 1.2.0
-* ADDEd: when operator
+* ADDED: `when` operator.
 
 ## 1.1.2
-* FIX: documentation
+* FIXED: Documentation.
 
 ## 1.1.1
-* FIX: documentation
+* FIXED: Documentation.
 
 ## 1.1.0
-
-* NEW: State History.
-* NEW: Timeout.
-* NEW: Cancellation Support
-* NEW: Added Command State Getters.
-* Fix: Running class name.
-
+* ADDED: State history.
+* ADDED: Timeout.
+* ADDED: Cancellation support.
+* ADDED: Command state getters.
+* FIXED: Running class name.
 
 ## 1.0.0
-
-* Initial Release
+* Initial release.

@@ -48,21 +48,34 @@ sealed class CommandState<T extends Object> {
       SuccessCommand<T>(:final value) => data.call(value) ?? orElse(),
     };
   }
+
+  /// Returns the current state as a string representation.
+  /// This is useful for debugging and logging purposes.
+  String get instanceName;
 }
 
 /// Represents the idle state of a command (not running).
 final class IdleCommand<T extends Object> extends CommandState<T> {
   const IdleCommand();
+
+  @override
+  final String instanceName = 'IdleCommand';
 }
 
 /// Represents the cancelled state of a command.
 final class CancelledCommand<T extends Object> extends CommandState<T> {
   const CancelledCommand();
+
+  @override
+  final String instanceName = 'CancelledCommand';
 }
 
 /// Represents the running state of a command.
 final class RunningCommand<T extends Object> extends CommandState<T> {
   const RunningCommand();
+
+  @override
+  final String instanceName = 'RunningCommand';
 }
 
 /// Represents a command that failed to execute successfully.
@@ -72,6 +85,9 @@ final class FailureCommand<T extends Object> extends CommandState<T> {
 
   /// The error that occurred during execution.
   final Exception error;
+
+  @override
+  final String instanceName = 'FailureCommand';
 }
 
 /// Represents a command that executed successfully.
@@ -81,4 +97,7 @@ final class SuccessCommand<T extends Object> extends CommandState<T> {
 
   /// The result of the successful execution.
   final T value;
+
+  @override
+  final String instanceName = 'SuccessCommand';
 }

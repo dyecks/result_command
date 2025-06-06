@@ -1,15 +1,15 @@
 name: result_command
 description: "A command pattern implementation for Dart and Flutter using result_dart package."
-version: 1.3.0
+version: 2.0.0
 repository: https://github.com/Flutterando/result_command
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.6.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  result_dart: ">=2.0.0 <3.0.0"
+  result_dart: ">=2.1.0 <3.0.0"
 
 dev_dependencies:
   flutter_test:

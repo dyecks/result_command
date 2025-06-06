@@ -5,7 +5,6 @@ import 'package:result_dart/functions.dart';
 import 'package:result_dart/result_dart.dart';
 
 part 'history.dart';
-part 'implementations.dart';
 part 'states.dart';
 part 'types.dart';
 
@@ -35,6 +34,21 @@ abstract class Command<T extends Object> extends ChangeNotifier
 
   /// The current state of the command.
   CommandState<T> _value = IdleCommand<T>();
+
+  SuccessCommand<T>? _cachedSuccessCommand;
+  FailureCommand<T>? _cachedFailureCommand;
+
+  /// Returns the cached value of the [SuccessCommand], or `null` if not found.
+  ///
+  /// This method retrieves the value associated with a successful command execution
+  /// from the cache. If the command is not a [SuccessCommand], it returns `null`.
+  T? getCachedSuccess() => _cachedSuccessCommand?.value;
+
+  /// Returns the cached exception of the [FailureCommand], or `null` if not found.
+  ///
+  /// This method retrieves the exception associated with a failed command execution
+  /// from the cache. If the command is not a [FailureCommand], it returns `null`.
+  Exception? getCachedFailure() => _cachedFailureCommand?.error;
 
   ///[isIdle]: Checks if the command is in the idle state.
   bool get isIdle => value is IdleCommand<T>;
@@ -76,6 +90,8 @@ abstract class Command<T extends Object> extends ChangeNotifier
   ///
   /// This clears the current state, allowing the command to be reused.
   void reset({Map<String, dynamic>? metadata}) {
+    _cachedFailureCommand = null;
+    _cachedSuccessCommand = null;
     _setValue(IdleCommand<T>(),
         metadata: metadata ?? {'reason': 'Command reset'});
   }
@@ -122,17 +138,29 @@ abstract class Command<T extends Object> extends ChangeNotifier
     }
   }
 
+  /// Updates the cache whenever the command state changes.
+  void _updateCache(CommandState<T> newValue) {
+    if (newValue is SuccessCommand<T>) {
+      _cachedSuccessCommand = newValue;
+    } else if (newValue is FailureCommand<T>) {
+      _cachedFailureCommand = newValue;
+    }
+  }
+
   /// Sets the current state of the command and notifies listeners.
   ///
-  /// Additionally, records the change in the state history with optional metadata.
+  /// Additionally, records the change in the state history with optional metadata
+  /// and updates the cache.
   void _setValue(CommandState<T> newValue, {Map<String, dynamic>? metadata}) {
-    if (newValue.runtimeType == _value.runtimeType && stateHistory.isNotEmpty) {
+    if (newValue.instanceName == _value.instanceName &&
+        stateHistory.isNotEmpty) {
       return;
     }
     _value = newValue;
+    _updateCache(newValue);
     _defaultObserverListener?.call(newValue);
     addHistoryEntry(CommandHistoryEntry(state: newValue, metadata: metadata));
-    notifyListeners(); // Notify listeners using ChangeNotifier.
+    notifyListeners();
   }
 }
 

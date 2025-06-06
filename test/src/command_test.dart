@@ -4,6 +4,29 @@ import 'package:result_dart/result_dart.dart';
 
 void main() {
   group('Command tests', () {
+    test('User getters', () async {
+      int value = 0;
+
+      AsyncResult<String> action() async {
+        await Future.delayed(const Duration(milliseconds: 100));
+        value++;
+
+        if (value >= 2) {
+          return Failure(Exception('error'));
+        }
+
+        return Success('success $value');
+      }
+
+      final command = Command0<String>(action);
+      await command.execute();
+
+      expect(command.getCachedSuccess(), 'success 1');
+
+      await command.execute();
+      expect(command.getCachedFailure(), isA<Exception>());
+    });
+
     test('Command0 executes successfully', () async {
       AsyncResult<String> action() async {
         await Future.delayed(const Duration(milliseconds: 100));

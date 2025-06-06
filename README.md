@@ -1,158 +1,29 @@
 # Result Command
 
-**Result Command** is a lightweight package that brings the **Command Pattern** to Flutter, allowing you to encapsulate actions, track their execution state, and manage results with clarity. Perfect for simplifying complex workflows, ensuring robust error handling, and keeping your UI reactive.
+**Result Command** is a lightweight package that implements the **Command Pattern** in Flutter, enabling encapsulation of actions, state tracking, and result management.
 
 ---
 
-## Getting Started
+## Installation
 
-1. Add the package to your `pubspec.yaml`:
-   ```yaml
-   dependencies:
-     result_command: x.x.x
-     result_dart: 2.x.x
-   ```
-
-2. Wrap your actions in commands:
-   - Use pre-defined `Command` types to encapsulate your logic.
-   - Attach listeners to update your UI dynamically.
-
-3. Execute commands from your UI and enjoy the benefits of encapsulated logic and state tracking.
-
----
-
-## Why Use Result Command?
-
-1. **Encapsulation**: Wrap your business logic into reusable commands.
-2. **State Tracking**: Automatically manage states like `Idle`, `Running`, `Success`, `Failure`, and `Cancelled`.
-3. **Error Handling**: Centralize how you handle successes and failures using the intuitive `Result` API.
-4. **State History**: Track state transitions with optional metadata.
-5. **Timeout Support**: Specify execution time limits for commands.
-6. **Cancellation Support**: Cancel long-running tasks when needed.
-7. **UI Integration**: React to command state changes directly in your Flutter widgets.
-
----
-
-## How It Works
-
-At its core, **Result Command** lets you define reusable actions (commands) that manage their lifecycle. Each command:
-
-- **Executes an action** (e.g., API call, user input validation).
-- **Tracks its state** (`Idle`, `Running`, etc.).
-- **Notifies listeners** when the state changes.
-- **Maintains a history** of states and transitions.
-- **Returns a result** (`Success` or `Failure`) using the `Result` API.
-
----
-
-## Command State (`CommandState`)
-
-Each `Command` exposes its current state through a `CommandState`. The state represents one of the following:
-
-- **`IdleCommand`**: The command is ready to execute.
-- **`RunningCommand`**: The command is currently executing an action.
-- **`SuccessCommand`**: The action completed successfully.
-- **`FailureCommand`**: The action failed with an error.
-- **`CancelledCommand`**: The action was explicitly stopped.
-
-### Accessing the State
-You can access the current state using the `value` property of the command:
-```dart
-final command = Command0<String>(() async {
-  return Success('Hello, World!');
-});
-
-// The current state of the command.
-print(command.value); // Outputs: SuccessCommand<String>
-```
-
-### Reacting to State Changes
-The state updates automatically as the command executes:
-- Use `addListener` for manual handling.
-- Use `ValueListenableBuilder` to bind the state to your UI.
-
-## State History (`CommandHistory`)
-
-Each command tracks a configurable history of its states, useful for debugging, auditing, and behavioral analysis.
-
-### Configuring the History
-
-Set the maximum length of the history when creating a command:
-
-```dart
-final command = Command0<String>(
-  () async => const Success('Done'),
-  maxHistoryLength: 5,
-);
-```
-
-### Accessing the History
-
-Access the history with `stateHistory`:
-
-```dart
-final history = command.stateHistory;
-history.forEach(print);
+Add the package to your `pubspec.yaml`:
+```yaml
+dependencies:
+  result_command: x.x.x
+  result_dart: 2.x.x
 ```
 
 ---
 
-## Getters for State Checks
+## How to Use
 
-To simplify state management and improve code readability, the following getters are available:
+### 1. Creating a Command
+Commands encapsulate actions and manage their lifecycle. Depending on the number of parameters your action requires, you can use:
+- **Command0**: For actions with no parameters.
+- **Command1**: For actions with one parameter.
+- **Command2**: For actions with two parameters.
 
-- **`isIdle`**: Checks if the command is in the idle state.
-  ```dart
-  bool get isIdle => value is IdleCommand<T>;
-  ```
-
-- **`isRunning`**: Checks if the command is currently running.
-  ```dart
-  bool get isRunning => value is RunningCommand<T>;
-  ```
-
-- **`isCancelled`**: Checks if the command has been cancelled.
-  ```dart
-  bool get isCancelled => value is CancelledCommand<T>;
-  ```
-
-- **`isSuccess`**: Checks if the command execution was successful.
-  ```dart
-  bool get isSuccess => value is SuccessCommand<T>;
-  ```
-
-- **`isFailure`**: Checks if the command execution failed.
-  ```dart
-  bool get isFailure => value is FailureCommand<T>;
-  ```
-
-These getters allow you to write cleaner and more intuitive code when interacting with commands in your views or controllers.
-
----
-
-## Observer
-  
-Sets the default observer listener for all commands.
-This listener is called whenever the state of any command changes. 
-This can be useful for logging, debugging, or global state management.
-
-
-```dart
-main(){
-
-  Command.setObserverListener((state) {
-    print(state);
-  });
-
-  runApp(MainApp());
-}
-```
-
-## Examples
-
-### Example 1: Simple Command with No Arguments
-
-Encapsulate a simple action into a reusable `Command`:
+Example:
 ```dart
 final fetchGreetingCommand = Command0<String>(
   () async {
@@ -161,49 +32,6 @@ final fetchGreetingCommand = Command0<String>(
   },
 );
 
-fetchGreetingCommand.addListener(() {
-  final snapshot = fetchGreetingCommand.value;
-  if (snapshot is Success<String>) {
-    final result = snapshot.value;
-    print('Success: $result');
-  } else if (snapshot is FailureCommand<String>) {
-    final error = snapshot.error;
-    print('Failure: $error');
-  }
-});
-
-// Execute the command
-fetchGreetingCommand.execute();
-```
-
----
-
-### Example 2: Simple Command with Timeout
-
-Commands now support a timeout for execution:
-
-```dart
-final fetchGreetingCommand = Command0<String>(
-  () async {
-    await Future.delayed(Duration(seconds: 5)); // Simulating a delay.
-    return Success('Hello, World!');
-  },
-);
-
-fetchGreetingCommand //
-      .execute(timeout: Duration(seconds: 2))
-      .catchError((error) {
-          print('Error: $error'); // "Error: Command timed out"
-      },
-);
-```
-
----
-
-### Example 3: Command with Arguments
-
-Pass input to your command's action:
-```dart
 final calculateSquareCommand = Command1<int, int>(
   (number) async {
     if (number < 0) {
@@ -212,195 +40,145 @@ final calculateSquareCommand = Command1<int, int>(
     return Success(number * number);
   },
 );
-
-calculateSquareCommand.addListener(() {
-  final snapshot = calculateSquareCommand.value;
-  if (snapshot is SuccessCommand<int>) {
-    final result = snapshot.value;
-    print('Square: $result');
-  } else if (snapshot is FailureCommand<int>) {
-    final error = snapshot.error;
-    print('Error: $error');
-  }
-});
-
-// Execute the command with input
-calculateSquareCommand.execute(4);
 ```
 
 ---
 
-### Example 4: Binding State to the UI
+### 2. Listening to a Command
+Commands are `Listenable`, meaning you can react to their state changes:
 
-Use `ValueListenableBuilder` to update the UI automatically:
+#### Using `addListener`
 ```dart
-final loginCommand = Command2<bool, String, String>(
-  (username, password) async {
-    if (username == 'admin' && password == 'password') {
-      return Success(true);
-    }
-    return Failure(Exception('Invalid credentials.'));
-  },
-);
+fetchGreetingCommand.addListener(() {
+  final status = fetchGreetingCommand.value;
+  if (status is SuccessCommand<String>) {
+    print('Success: ${status.value}');
+  } else if (status is FailureCommand<String>) {
+    print('Failure: ${status.error}');
+  }
+});
+```
 
+#### Using `ValueListenableBuilder`
+```dart
 Widget build(BuildContext context) {
-  return Column(
-    children: [
-      ValueListenableBuilder<CommandState<bool>>(
-        valueListenable: loginCommand,
-        builder: (context, state, child) {
-          if (state is RunningCommand<bool>) {
-            return CircularProgressIndicator();
-          } else if (state is SuccessCommand<bool>) {
-            return Text('Login Successful!');
-          } else if (state is FailureCommand<bool>) {
-            return Text('Login Failed: ${(state as FailureCommand).error}');
-          }
-          return ElevatedButton(
-            onPressed: () => loginCommand.execute('admin', 'password'),
-            child: Text('Login'),
-          );
-        },
-      ),
-    ],
+  return ListenableBuilder(
+    listenable: fetchGreetingCommand,
+    builder: (context, _) {
+      return switch (state) {
+        RunningCommand<String>() => CircularProgressIndicator(),
+        SuccessCommand<String>(:final value) => Text('Success: $value'),
+        FailureCommand<String>(:final error) => Text('Failure: $error'),
+        _ => ElevatedButton(
+          onPressed: () => fetchGreetingCommand.execute(),
+          child: Text('Fetch Greeting'),
+        ),
+      };
+    },
   );
 }
 ```
 
+#### Using `when` for Simplified State Handling
+The `when` method simplifies state management by mapping each state to a specific action or value:
+```dart
+fetchGreetingCommand.addListener(() {
+  final status = fetchGreetingCommand.value;
+  final message = status.when(
+    data: (value) => 'Success: $value',
+    failure: (exception) => 'Error: ${exception?.message}',
+    running: () => 'Fetching...',
+    orElse: () => 'Idle',
+  );
+
+  print(message);
+});
+```
+This approach ensures type safety and provides a clean way to handle all possible states of a command.
+
 ---
 
-### Example 5: Cancellation
+### 3. Executing a Command
+The `execute()` method triggers the action encapsulated by the command. During execution, the command transitions through the following states:
 
-Cancel long-running commands gracefully:
+1. **Idle**: The initial state, indicating the command is ready to execute.
+2. **Running**: The state while the action is being executed.
+3. **Success**: The state when the action completes successfully.
+4. **Failure**: The state when the action fails.
+5. **Cancelled**: The state when the action is cancelled.
+
+Each command can only be executed one at a time. If another call to `execute()` is made while the command is already running, it will be ignored until the current execution finishes or is cancelled.
+
+Example:
 ```dart
+fetchGreetingCommand.execute();
+```
 
-Isolate? _uploadIsolate;
+---
 
-void _uploadAction() {
-  //  uploading code...
-}
+### 4. Cancelling a Command
+Commands can be cancelled if they are in the `Running` state. When cancelled, the command transitions to the `Cancelled` state and invokes the optional `onCancel` callback.
 
+Example:
+```dart
 final uploadCommand = Command0<void>(
   () async {
-    _uploadIsolate = await Isolate.spawn(_uploadAction, []);
+    await Future.delayed(Duration(seconds: 5));
   },
   onCancel: () {
-   _uploadIsolate.kill();
+    print('Upload cancelled');
   },
 );
 
-// Start the upload
 uploadCommand.execute();
 
-// Cancel after 3 seconds
-Future.delayed(Duration(seconds: 3), () {
+Future.delayed(Duration(seconds: 2), () {
   uploadCommand.cancel();
 });
 ```
 
---- 
-
-### Example 5: using the map function
-
-Cancel long-running commands gracefully:
-```dart
-
-final calculateSquareCommand = Command1<int, int>(
-      (number) async {
-    if (number < 0) {
-      return Failure(Exception('Negative numbers are not allowed.'));
-    }
-    return Success(number * number);
-  },
-);
-
-calculateSquareCommand.addListener(() {
-    final message = calculateSquareCommand.value.when<String>(
-        data: (value) => 'Square: $value',
-        failure: (exception) => 'Error: ${exception?.message}',
-        running: () => 'Calculating...',
-        orElse: () => 'default value',
-    );
-
-    // Display the message in a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-    );
-});
-// Execute the command with input
-calculateSquareCommand.execute(4);
-```
-
-```dart
-
-Widget build(BuildContext context) {
-  return Column(
-    children: [
-      ValueListenableBuilder<CommandState<bool>>(
-        valueListenable: loginCommand,
-        builder: (context, state, child) {
-          return state.when(
-            data: (_) => const Text('Login Successful!'),
-            running: () => const CircularProgressIndicator(),
-            failure: (error) => Text('Login Failed: $error'),
-            orElse: () => ElevatedButton(
-              onPressed: () => loginCommand.execute('admin', 'password'),
-              child: Text('Login'),
-            ),
-          );
-        },
-      ),
-    ],
-  );
-}
-```
-
-
-#### Minimal Usage: Handling Only Success State and orElse
-```dart
-
-final calculateSquareCommand = Command1<int, int>(
-      (number) async {
-    if (number < 0) {
-      return Failure(Exception('Negative numbers are not allowed.'));
-    }
-    return Success(number * number);
-  },
-);
-
-calculateSquareCommand.addListener(() {
-    final message = calculateSquareCommand.value.when<String>(
-        data: (value) => 'Square: $value',
-        orElse: () => 'default value',
-    );
-
-    // Display the message in a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-    );
-});
-// Execute the command with input
-calculateSquareCommand.execute(4);
-```
-
-**Notes**
- - The function ensures type safety by requiring `data to handle the `success` state explicitly.
- - The `orElse` callback is useful for dealing with unexpected states or adding default behavior.
-
-----
-
-## Benefits for Your Team
-
-- **Simplified Collaboration**: Encapsulation makes it easier for teams to work independently on UI and business logic.
-- **Reusability**: Commands can be reused across different widgets or flows.
-- **Maintainability**: Cleaner separation of concerns reduces technical debt.
-
 ---
 
+### 5. Facilitators
 
+To simplify interaction with commands, several helper methods and getters are available:
+
+#### State Check Getters
+These getters allow you to easily check the current state of a command:
+```dart
+  if (command.isRunning) {
+    print('Command is idle and ready to execute.');
+  }
+```
+
+#### Cached Values
+To avoid flickering or unnecessary updates in the UI, commands cache their last success and failure states:
+- **`getCachedSuccess()`**: Retrieves the cached value of the last successful execution, or `null` if no success is cached.
+  ```dart
+  final successValue = command.getCachedSuccess();
+  if (successValue != null) {
+    print('Last successful value: $successValue');
+  }
+  ```
+- **`getCachedFailure()`**: Retrieves the cached exception of the last failed execution, or `null` if no failure is cached.
+  ```dart
+  final failureException = command.getCachedFailure();
+  if (failureException != null) {
+    print('Last failure exception: $failureException');
+  }
+  ```
+
+These facilitators improve code readability and make it easier to manage command states and results efficiently.
+
+
+## Documentation
+
+For advanced examples and detailed documentation, visit:
+- [Examples](example/)
+- [GitHub Wiki](https://github.com/seu-repo/result_command/wiki)
+
+---
 
 ## Contribute
 
-We’d love your help in improving **Result Command**! Feel free to report issues, suggest features, or submit pull requests.
-
----
+We welcome contributions! Feel free to report issues, suggest features, or submit pull requests.
