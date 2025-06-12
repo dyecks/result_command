@@ -52,6 +52,12 @@ sealed class CommandState<T extends Object> {
   /// Returns the current state as a string representation.
   /// This is useful for debugging and logging purposes.
   String get instanceName;
+
+  bool get isIdle => this is IdleCommand<T>;
+  bool get isRunning => this is RunningCommand<T>;
+  bool get isSuccess => this is SuccessCommand<T>;
+  bool get isFailure => this is FailureCommand<T>;
+  bool get isCancelled => this is CancelledCommand<T>;
 }
 
 /// Represents the idle state of a command (not running).

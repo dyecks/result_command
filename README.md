@@ -170,6 +170,65 @@ To avoid flickering or unnecessary updates in the UI, commands cache their last 
 
 These facilitators improve code readability and make it easier to manage command states and results efficiently.
 
+---
+
+### 6. Filtering Command State
+
+The `filter` method allows you to derive a new value from the command's state using a transformation function. This is useful for creating filtered or transformed views of the command's state.
+
+#### Example:
+```dart
+final filteredValue = command.filter<String>(
+  'Default Value',
+  (state) {
+    if (state is SuccessCommand<String>) {
+      return 'Success: ${state.value}';
+    } else if (state is FailureCommand<String>) {
+      return 'Error: ${state.error}';
+    }
+    return null; // Ignore other states.
+  },
+);
+
+filteredValue.addListener(() {
+  print('Filtered Value: ${filteredValue.value}');
+});
+```
+
+This method simplifies state management by allowing you to focus on specific aspects of the command's state.
+
+---
+
+### 7. CommandRef
+
+The `CommandRef` class allows you to create commands that listen to changes in one or more `ValueListenables` and execute actions based on derived values.
+
+#### Example:
+```dart
+final listenable = ValueNotifier<int>(0);
+
+final commandRef = CommandRef<int, int>(
+  (ref) => ref(listenable),
+  (value) async => Success(value * 2),
+);
+
+commandRef.addListener(() {
+  final status = commandRef.value;
+  if (status is SuccessCommand<int>) {
+    print('Result: ${status.value}');
+  }
+});
+
+listenable.value = 5; // Executes the command with the value 5.
+```
+
+#### Features:
+- Automatically listens to changes in `ValueListenables`.
+- Executes the action whenever the derived value changes.
+- Cleans up listeners when disposed.
+
+This class is ideal for scenarios where commands need to react dynamically to external state changes.
+
 
 ## Documentation
 

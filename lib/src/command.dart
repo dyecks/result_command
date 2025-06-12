@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:result_dart/functions.dart';
 import 'package:result_dart/result_dart.dart';
 
+part 'command_ref.dart';
 part 'history.dart';
 part 'states.dart';
 part 'types.dart';
@@ -14,7 +15,7 @@ void Function(CommandState state)? _defaultObserverListener;
 ///
 /// This class supports state management, notifications, and execution
 /// with optional cancellation and history tracking.
-abstract class Command<T extends Object> extends ChangeNotifier
+sealed class Command<T extends Object> extends ChangeNotifier
     with CommandHistoryManager<T>
     implements ValueListenable<CommandState<T>> {
   /// Callback executed when the command is cancelled.
@@ -51,29 +52,66 @@ abstract class Command<T extends Object> extends ChangeNotifier
   Exception? getCachedFailure() => _cachedFailureCommand?.error;
 
   ///[isIdle]: Checks if the command is in the idle state.
-  bool get isIdle => value is IdleCommand<T>;
+  @Deprecated('Use value.isIdle instead')
+  bool get isIdle => value.isIdle;
 
   ///[isRunning]: Checks if the command is currently running.
-  bool get isRunning => value is RunningCommand<T>;
+  @Deprecated('Use value.isRunning instead')
+  bool get isRunning => value.isRunning;
 
   ///[isCancelled]: Checks if the command has been cancelled.
-  bool get isCancelled => value is CancelledCommand<T>;
+  @Deprecated('Use value.isCancelled instead')
+  bool get isCancelled => value.isCancelled;
 
-  ///[isSuccess]:Checks if the command execution was successful.
-  bool get isSuccess => value is SuccessCommand<T>;
+  ///[isSuccess]: Checks if the command execution was successful.
+  @Deprecated('Use value.isSuccess instead')
+  bool get isSuccess => value.isSuccess;
 
   ///[isFailure]: Checks if the command execution failed.
-  bool get isFailure => value is FailureCommand<T>;
+  @Deprecated('Use value.isFailure instead')
+  bool get isFailure => value.isFailure;
 
   @override
   CommandState<T> get value => _value;
+
+  /// Filters the current command state and returns a ValueListenable with the transformed value.
+  ///
+  /// This method allows you to derive a new value from the command's state using a transformation function.
+  /// The resulting ValueListenable updates whenever the command's state changes.
+  ///
+  /// - [defaultValue]: The initial value for the ValueListenable.
+  /// - [func]: A function that takes the current CommandState and returns the transformed value.
+  ///
+  /// Returns a ValueListenable that emits the transformed value whenever the command's state changes.
+  ///
+  /// Example:
+  /// ```dart
+  /// final filteredValue = command.filter<String>(
+  ///   'Default Value',
+  ///   (state) {
+  ///     if (state is SuccessCommand<String>) {
+  ///       return 'Success: ${state.value}';
+  ///     } else if (state is FailureCommand<String>) {
+  ///       return 'Error: ${state.error}';
+  ///     }
+  ///     return null; // Ignore other states.
+  ///   },
+  /// );
+  ///
+  /// filteredValue.addListener(() {
+  ///   print('Filtered Value: ${filteredValue.value}');
+  /// });
+  /// ```
+  ValueListenable<W> filter<W>(
+          W defaultValue, W? Function(CommandState<T>) func) =>
+      _FilteredValueNotifier<W, T>(defaultValue, this, func);
 
   /// Cancels the execution of the command.
   ///
   /// If the command is in the [RunningCommand] state, the [onCancel] callback is invoked,
   /// and the state transitions to [CancelledCommand].
   void cancel({Map<String, dynamic>? metadata}) {
-    if (isRunning) {
+    if (value.isRunning) {
       try {
         onCancel?.call();
       } catch (e) {
@@ -90,6 +128,9 @@ abstract class Command<T extends Object> extends ChangeNotifier
   ///
   /// This clears the current state, allowing the command to be reused.
   void reset({Map<String, dynamic>? metadata}) {
+    if (value.isRunning) {
+      return;
+    }
     _cachedFailureCommand = null;
     _cachedSuccessCommand = null;
     _setValue(IdleCommand<T>(),
@@ -104,7 +145,7 @@ abstract class Command<T extends Object> extends ChangeNotifier
   /// Optionally accepts a [timeout] duration to limit the execution time of the action.
   /// If the action times out, the command is cancelled and transitions to [FailureCommand].
   Future<void> _execute(CommandAction0<T> action, {Duration? timeout}) async {
-    if (isRunning) {
+    if (value.isRunning) {
       return;
     } // Prevent multiple concurrent executions.
     _setValue(RunningCommand<T>(), metadata: {'status': 'Execution started'});
@@ -131,7 +172,7 @@ abstract class Command<T extends Object> extends ChangeNotifier
             .map(SuccessCommand<T>.new)
             .mapError(FailureCommand<T>.new)
             .fold(identity, identity);
-        if (isRunning) {
+        if (value.isRunning) {
           _setValue(newValue);
         }
       }
@@ -207,5 +248,28 @@ final class Command2<T extends Object, A, B> extends Command<T> {
   /// and updates the command state.
   Future<void> execute(A argument1, B argument2, {Duration? timeout}) async {
     await _execute(() => _action(argument1, argument2), timeout: timeout);
+  }
+}
+
+final class _FilteredValueNotifier<W, T extends Object>
+    extends ValueNotifier<W> {
+  final ValueListenable<CommandState<T>> _command;
+  final W? Function(CommandState<T>) _func;
+
+  _FilteredValueNotifier(super.defaultValue, this._command, this._func) {
+    _command.addListener(_updateValue);
+  }
+
+  void _updateValue() {
+    final newValue = _func(_command.value);
+    if (newValue != null) {
+      value = newValue;
+    }
+  }
+
+  @override
+  void dispose() {
+    _command.removeListener(_updateValue);
+    super.dispose();
   }
 }

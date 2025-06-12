@@ -1,3 +1,9 @@
+## 2.1.0
+* ADDED: `filter` method for deriving transformed values from command states.
+* ADDED: `CommandRef` class for listening to changes in `ValueListenables` and executing actions dynamically.
+* DEPRECATED: Command state methods (`isIdle`, `isRunning`, etc.) moved to `CommandState` for better encapsulation.
+* IMPROVED: Documentation for new features and deprecated methods.
+
 ## 2.0.0
 * ADDED: Cache methods `getCachedSuccess()`, `getCachedFailure()`.
 * ADDED: Improved documentation.
