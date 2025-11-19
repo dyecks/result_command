@@ -23,7 +23,7 @@ sealed class Command<T extends Object> extends ChangeNotifier
 
   Command([this.onCancel, int maxHistoryLength = 10]) : super() {
     initializeHistoryManager(maxHistoryLength);
-    _setValue(IdleCommand<T>(), metadata: {'reason': 'Command created'});
+    _setState(IdleCommand<T>(), metadata: {'reason': 'Command created'});
   }
 
   /// Sets the default observer listener for all commands.
@@ -34,7 +34,7 @@ sealed class Command<T extends Object> extends ChangeNotifier
   }
 
   /// The current state of the command.
-  CommandState<T> _value = IdleCommand<T>();
+  CommandState<T> _state = IdleCommand<T>();
 
   SuccessCommand<T>? _cachedSuccessCommand;
   FailureCommand<T>? _cachedFailureCommand;
@@ -51,28 +51,13 @@ sealed class Command<T extends Object> extends ChangeNotifier
   /// from the cache. If the command is not a [FailureCommand], it returns `null`.
   Exception? getCachedFailure() => _cachedFailureCommand?.error;
 
-  ///[isIdle]: Checks if the command is in the idle state.
-  @Deprecated('Use value.isIdle instead')
-  bool get isIdle => value.isIdle;
+  /// The current state of the command.
+  CommandState<T> get state => _state;
 
-  ///[isRunning]: Checks if the command is currently running.
-  @Deprecated('Use value.isRunning instead')
-  bool get isRunning => value.isRunning;
-
-  ///[isCancelled]: Checks if the command has been cancelled.
-  @Deprecated('Use value.isCancelled instead')
-  bool get isCancelled => value.isCancelled;
-
-  ///[isSuccess]: Checks if the command execution was successful.
-  @Deprecated('Use value.isSuccess instead')
-  bool get isSuccess => value.isSuccess;
-
-  ///[isFailure]: Checks if the command execution failed.
-  @Deprecated('Use value.isFailure instead')
-  bool get isFailure => value.isFailure;
-
+  /// Prefer using the `state` property instead.
+  /// Used for implementation with ValueListenable interface.
   @override
-  CommandState<T> get value => _value;
+  CommandState<T> get value => _state;
 
   /// Filters the current command state and returns a ValueListenable with the transformed value.
   ///
@@ -111,15 +96,15 @@ sealed class Command<T extends Object> extends ChangeNotifier
   /// If the command is in the [RunningCommand] state, the [onCancel] callback is invoked,
   /// and the state transitions to [CancelledCommand].
   void cancel({Map<String, dynamic>? metadata}) {
-    if (value.isRunning) {
+    if (state.isRunning) {
       try {
         onCancel?.call();
       } catch (e) {
-        _setValue(FailureCommand<T>(e is Exception ? e : Exception('$e')),
+        _setState(FailureCommand<T>(e is Exception ? e : Exception('$e')),
             metadata: metadata);
         return;
       }
-      _setValue(CancelledCommand<T>(),
+      _setState(CancelledCommand<T>(),
           metadata: metadata ?? {'reason': 'Manually cancelled'});
     }
   }
@@ -128,12 +113,12 @@ sealed class Command<T extends Object> extends ChangeNotifier
   ///
   /// This clears the current state, allowing the command to be reused.
   void reset({Map<String, dynamic>? metadata}) {
-    if (value.isRunning) {
+    if (state.isRunning) {
       return;
     }
     _cachedFailureCommand = null;
     _cachedSuccessCommand = null;
-    _setValue(IdleCommand<T>(),
+    _setState(IdleCommand<T>(),
         metadata: metadata ?? {'reason': 'Command reset'});
   }
 
@@ -155,10 +140,10 @@ sealed class Command<T extends Object> extends ChangeNotifier
   /// });
   ///
   /// final removeListener = command.addWhenListener(
-  ///   onIdle: () => print('Command is ready'),
-  ///   onRunning: () => print('Command is executing'),
   ///   onSuccess: (value) => print('Success: $value'),
   ///   onFailure: (error) => print('Error: $error'),
+  ///   onIdle: () => print('Command is ready'),
+  ///   onRunning: () => print('Command is executing'),
   ///   onCancelled: () => print('Command was cancelled'),
   ///   orElse: () => print('Unknown state'),
   /// );
@@ -167,15 +152,15 @@ sealed class Command<T extends Object> extends ChangeNotifier
   /// removeListener();
   /// ```
   VoidCallback addWhenListener({
-    void Function()? onIdle,
-    void Function()? onRunning,
     void Function(T value)? onSuccess,
     void Function(Exception? exception)? onFailure,
+    void Function()? onIdle,
+    void Function()? onRunning,
     void Function()? onCancelled,
     void Function()? orElse,
   }) {
     void listener() {
-      switch (value) {
+      switch (state) {
         case IdleCommand<T>():
           (onIdle ?? orElse)?.call();
         case CancelledCommand<T>():
@@ -207,10 +192,10 @@ sealed class Command<T extends Object> extends ChangeNotifier
   /// Optionally accepts a [timeout] duration to limit the execution time of the action.
   /// If the action times out, the command is cancelled and transitions to [FailureCommand].
   Future<void> _execute(CommandAction0<T> action, {Duration? timeout}) async {
-    if (value.isRunning) {
+    if (state.isRunning) {
       return;
     } // Prevent multiple concurrent executions.
-    _setValue(RunningCommand<T>(), metadata: {'status': 'Execution started'});
+    _setState(RunningCommand<T>(), metadata: {'status': 'Execution started'});
     bool hasError = false;
 
     late Result<T> result;
@@ -225,28 +210,28 @@ sealed class Command<T extends Object> extends ChangeNotifier
       }
     } catch (e, stackTrace) {
       hasError = true;
-      _setValue(FailureCommand<T>(Exception('Unexpected error: $e')),
+      _setState(FailureCommand<T>(Exception('Unexpected error: $e')),
           metadata: {'error': '$e', 'stackTrace': stackTrace.toString()});
       return;
     } finally {
       if (!hasError) {
-        final newValue = result
+        final newState = result
             .map(SuccessCommand<T>.new)
             .mapError(FailureCommand<T>.new)
             .fold(identity, identity);
-        if (value.isRunning) {
-          _setValue(newValue);
+        if (state.isRunning) {
+          _setState(newState);
         }
       }
     }
   }
 
   /// Updates the cache whenever the command state changes.
-  void _updateCache(CommandState<T> newValue) {
-    if (newValue is SuccessCommand<T>) {
-      _cachedSuccessCommand = newValue;
-    } else if (newValue is FailureCommand<T>) {
-      _cachedFailureCommand = newValue;
+  void _updateCache(CommandState<T> newState) {
+    if (newState is SuccessCommand<T>) {
+      _cachedSuccessCommand = newState;
+    } else if (newState is FailureCommand<T>) {
+      _cachedFailureCommand = newState;
     }
   }
 
@@ -254,15 +239,15 @@ sealed class Command<T extends Object> extends ChangeNotifier
   ///
   /// Additionally, records the change in the state history with optional metadata
   /// and updates the cache.
-  void _setValue(CommandState<T> newValue, {Map<String, dynamic>? metadata}) {
-    if (newValue.instanceName == _value.instanceName &&
+  void _setState(CommandState<T> newState, {Map<String, dynamic>? metadata}) {
+    if (newState.instanceName == _state.instanceName &&
         stateHistory.isNotEmpty) {
       return;
     }
-    _value = newValue;
-    _updateCache(newValue);
-    _defaultObserverListener?.call(newValue);
-    addHistoryEntry(CommandHistoryEntry(state: newValue, metadata: metadata));
+    _state = newState;
+    _updateCache(newState);
+    _defaultObserverListener?.call(newState);
+    addHistoryEntry(CommandHistoryEntry(state: newState, metadata: metadata));
     notifyListeners();
   }
 }

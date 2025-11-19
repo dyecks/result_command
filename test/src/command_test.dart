@@ -37,7 +37,7 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute();
@@ -46,7 +46,7 @@ void main() {
         isA<SuccessCommand<String>>(),
       ]);
 
-      expect(command.value, isA<SuccessCommand<String>>());
+      expect(command.state, isA<SuccessCommand<String>>());
 
       // Verify history
       final history = command.stateHistory;
@@ -72,7 +72,7 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute('Test');
@@ -81,8 +81,8 @@ void main() {
         isA<SuccessCommand<String>>(),
       ]);
 
-      expect(command.value, isA<SuccessCommand<String>>());
-      expect((command.value as SuccessCommand<String>).value, 'Test');
+      expect(command.state, isA<SuccessCommand<String>>());
+      expect((command.state as SuccessCommand<String>).value, 'Test');
 
       // Verify history
       final history = command.stateHistory;
@@ -110,7 +110,7 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       Future.delayed(const Duration(milliseconds: 100), () => command.cancel());
@@ -121,7 +121,7 @@ void main() {
         isA<FailureCommand<String>>(),
       ]);
 
-      expect(command.value, isA<FailureCommand<String>>());
+      expect(command.state, isA<FailureCommand<String>>());
 
       // Verify history
       final history = command.stateHistory;
@@ -141,7 +141,7 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute();
@@ -150,8 +150,8 @@ void main() {
         isA<FailureCommand<String>>(),
       ]);
 
-      expect(command.value, isA<FailureCommand<String>>());
-      expect((command.value as FailureCommand<String>).error.toString(),
+      expect(command.state, isA<FailureCommand<String>>());
+      expect((command.state as FailureCommand<String>).error.toString(),
           contains('failure'));
 
       // Verify history
@@ -176,7 +176,7 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute();
@@ -184,8 +184,8 @@ void main() {
         isA<RunningCommand<String>>(),
         isA<FailureCommand<String>>(),
       ]);
-      expect(command.value, isA<FailureCommand<String>>());
-      expect((command.value as FailureCommand<String>).error.toString(),
+      expect(command.state, isA<FailureCommand<String>>());
+      expect((command.state as FailureCommand<String>).error.toString(),
           contains('Unexpected exception'));
 
       // Verify history
@@ -212,7 +212,7 @@ void main() {
       command.execute();
 
       command.cancel(metadata: {'customKey': 'customValue'});
-      expect(command.value, isA<CancelledCommand<String>>());
+      expect(command.state, isA<CancelledCommand<String>>());
       expect(command.stateHistory.last.metadata,
           containsPair('customKey', 'customValue'));
     });
@@ -228,7 +228,7 @@ void main() {
 
       command.execute();
       command.cancel();
-      expect(command.value, isA<CancelledCommand<String>>());
+      expect(command.state, isA<CancelledCommand<String>>());
       expect(command.stateHistory.last.state, isA<CancelledCommand<String>>());
     });
 
@@ -242,7 +242,7 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute(timeout: const Duration(milliseconds: 500));
@@ -259,14 +259,14 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute();
-      expect(command.value, isA<SuccessCommand<String>>());
+      expect(command.state, isA<SuccessCommand<String>>());
 
       command.reset();
-      expect(command.value, isA<IdleCommand<String>>());
+      expect(command.state, isA<IdleCommand<String>>());
 
       // Verify history after reset
       final history = command.stateHistory;
@@ -289,12 +289,12 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute('input');
-      expect(command.value, isA<SuccessCommand<String>>());
-      expect((command.value as SuccessCommand<String>).value, 'INPUT');
+      expect(command.state, isA<SuccessCommand<String>>());
+      expect((command.state as SuccessCommand<String>).value, 'INPUT');
 
       // Verify history
       final history = command.stateHistory;
@@ -318,12 +318,12 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute('Value', 42);
-      expect(command.value, isA<SuccessCommand<String>>());
-      expect((command.value as SuccessCommand<String>).value, 'Value 42');
+      expect(command.state, isA<SuccessCommand<String>>());
+      expect((command.state as SuccessCommand<String>).value, 'Value 42');
 
       // Verify history
       final history = command.stateHistory;
@@ -358,7 +358,7 @@ void main() {
       final states = <CommandState<String>>[];
 
       command.addListener(() {
-        states.add(command.value);
+        states.add(command.state);
       });
 
       await command.execute();
@@ -386,10 +386,10 @@ void main() {
 
     test('Command isIdle returns true when state is IdleCommand', () {
       final command = Command0<String>(() async => const Success('idle'));
-      expect(command.isIdle, isTrue);
-      expect(command.isCancelled, isFalse);
-      expect(command.isSuccess, isFalse);
-      expect(command.isFailure, isFalse);
+      expect(command.state.isIdle, isTrue);
+      expect(command.state.isCancelled, isFalse);
+      expect(command.state.isSuccess, isFalse);
+      expect(command.state.isFailure, isFalse);
     });
 
     test('Command isCancelled returns true when state is CancelledCommand',
@@ -403,10 +403,10 @@ void main() {
 
       command.execute();
       command.cancel();
-      expect(command.isIdle, isFalse);
-      expect(command.isCancelled, isTrue);
-      expect(command.isSuccess, isFalse);
-      expect(command.isFailure, isFalse);
+      expect(command.state.isIdle, isFalse);
+      expect(command.state.isCancelled, isTrue);
+      expect(command.state.isSuccess, isFalse);
+      expect(command.state.isFailure, isFalse);
     });
 
     test('Command isSuccess returns true when state is SuccessCommand',
@@ -414,10 +414,10 @@ void main() {
       final command = Command0<String>(() async => const Success('success'));
 
       await command.execute();
-      expect(command.isIdle, isFalse);
-      expect(command.isCancelled, isFalse);
-      expect(command.isSuccess, isTrue);
-      expect(command.isFailure, isFalse);
+      expect(command.state.isIdle, isFalse);
+      expect(command.state.isCancelled, isFalse);
+      expect(command.state.isSuccess, isTrue);
+      expect(command.state.isFailure, isFalse);
     });
 
     test('Command isFailure returns true when state is FailureCommand',
@@ -426,10 +426,10 @@ void main() {
           Command0<String>(() async => Failure(Exception('failure')));
 
       await command.execute();
-      expect(command.isIdle, isFalse);
-      expect(command.isCancelled, isFalse);
-      expect(command.isSuccess, isFalse);
-      expect(command.isFailure, isTrue);
+      expect(command.state.isIdle, isFalse);
+      expect(command.state.isCancelled, isFalse);
+      expect(command.state.isSuccess, isFalse);
+      expect(command.state.isFailure, isTrue);
     });
 
     test(
@@ -440,10 +440,10 @@ void main() {
 
       await command.execute();
 
-      final result = command.value.when(
-        data: (_) => 'none',
-        running: () => 'running',
+      final result = command.state.when(
+        success: (_) => 'none',
         failure: (exception) => exception.toString(),
+        running: () => 'running',
         orElse: () => 'default value',
       );
 
@@ -456,10 +456,10 @@ void main() {
 
       await command.execute();
 
-      final result = command.value.when(
-        data: (value) => value,
-        running: () => 'running',
+      final result = command.state.when(
+        success: (value) => value,
         failure: (exception) => exception.toString(),
+        running: () => 'running',
         orElse: () => 'default value',
       );
 
@@ -475,9 +475,9 @@ void main() {
 
       await command.execute('param');
 
-      final result = command.value.when(
-        data: (value) => value,
+      final result = command.state.when(
         running: () => 'running',
+        success: (value) => value,
         failure: (exception) => exception.toString(),
         orElse: () => 'default value',
       );
@@ -492,8 +492,8 @@ void main() {
 
       await command.execute();
 
-      final result = command.value.when<String>(
-        data: (value) => 'otherValue',
+      final result = command.state.when<String>(
+        success: (value) => 'otherValue',
         orElse: () => 'default value',
       );
 
@@ -693,7 +693,7 @@ void main() {
       commandCompleted = true;
 
       expect(commandCompleted, isTrue);
-      expect(command.value, isA<SuccessCommand<String>>());
+      expect(command.state, isA<SuccessCommand<String>>());
     });
   });
 }

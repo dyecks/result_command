@@ -62,7 +62,7 @@ class MyHomePage extends StatelessWidget {
         valueListenable: incrementCommand,
         builder: (context, state, snapshot) {
           return FloatingActionButton(
-            onPressed: incrementCommand.isRunning
+            onPressed: incrementCommand.state.isRunning
                 ? null
                 : () => incrementCommand.execute(),
             tooltip: 'Increment',

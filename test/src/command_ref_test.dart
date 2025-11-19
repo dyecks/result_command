@@ -13,7 +13,7 @@ void main() {
     );
 
     commandRef.addListener(expectAsync0(() {
-      final status = commandRef.value;
+      final status = commandRef.state;
       if (status is SuccessCommand<int>) {
         expect(status.value, 10);
       }

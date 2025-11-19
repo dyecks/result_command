@@ -50,11 +50,11 @@ Commands are `Listenable`, meaning you can react to their state changes:
 #### Using `addListener`
 ```dart
 fetchGreetingCommand.addListener(() {
-  final status = fetchGreetingCommand.value;
-  if (status is SuccessCommand<String>) {
-    print('Success: ${status.value}');
-  } else if (status is FailureCommand<String>) {
-    print('Failure: ${status.error}');
+  final state = fetchGreetingCommand.state;
+  if (state is SuccessCommand<String>) {
+    print('Success: ${state.value}');
+  } else if (state is FailureCommand<String>) {
+    print('Failure: ${state.error}');
   }
 });
 ```
@@ -83,12 +83,13 @@ Widget build(BuildContext context) {
 The `when` method simplifies state management by mapping each state to a specific action or value:
 ```dart
 fetchGreetingCommand.addListener(() {
-  final status = fetchGreetingCommand.value;
-  final message = status.when(
-    data: (value) => 'Success: $value',
+  final message = fetchGreetingCommand.state.when(
+    success: (value) => 'Success: $value',
     failure: (exception) => 'Error: ${exception?.message}',
-    running: () => 'Fetching...',
-    orElse: () => 'Idle',
+    idle: () => 'Idle',
+    running: () => 'Running...',
+    cancelled: () => 'Cancelled',
+    orElse: () => 'Not provided state',
   );
 
   print(message);
@@ -146,7 +147,7 @@ To simplify interaction with commands, several helper methods and getters are av
 #### State Check Getters
 These getters allow you to easily check the current state of a command:
 ```dart
-  if (command.isRunning) {
+  if (command.state.isRunning) {
     print('Command is idle and ready to execute.');
   }
 ```

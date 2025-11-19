@@ -10,7 +10,7 @@ sealed class CommandState<T extends Object> {
   /// and map each state to a corresponding value of type [R]. If no handler for a specific state is provided, the fallback
   /// function [orElse] will be invoked.
   ///
-  /// - [data]: Called when the state represents success, receiving a value of type [T] (the successful result).
+  /// - [success]: Called when the state represents success, receiving a value of type [T] (the successful result).
   /// - [failure]: Called when the state represents failure, receiving an [Exception?]. Optional.
   /// - [cancelled]: Called when the state represents cancellation. Optional.
   /// - [running]: Called when the state represents a running operation. Optional.
@@ -23,29 +23,27 @@ sealed class CommandState<T extends Object> {
   /// Example:
   /// ```dart
   /// final result = command.value.when<String>(
-  ///   data: (value) => 'Success: $value',
+  ///   success: (value) => 'Success: $value',
   ///   failure: (e) => 'Error: ${e?.message}',
   ///   cancelled: () => 'Cancelled',
   ///   running: () => 'Running',
-  ///   orElse: () => 'Unknown state', // Required fallback function
+  ///   orElse: () => 'Unknown state',
   /// );
   /// ```
-  ///
-  /// If any of the optional parameters (`failure`, `cancelled`, `running`) are missing, you must provide [orElse]
-  /// to ensure a valid fallback is available.
-  R when<R>({
-    required R Function(T value) data,
+  R? when<R>({
+    R Function(T value)? success,
     R Function(Exception? exception)? failure,
-    R Function()? cancelled,
+    R Function()? idle,
     R Function()? running,
-    required Function() orElse,
+    R Function()? cancelled,
+    R Function()? orElse,
   }) {
     return switch (this) {
-      IdleCommand<T>() => orElse.call(),
-      CancelledCommand<T>() => cancelled?.call() ?? orElse(),
-      RunningCommand<T>() => running?.call() ?? orElse(),
-      FailureCommand<T>(:final error) => failure?.call(error) ?? orElse(),
-      SuccessCommand<T>(:final value) => data.call(value) ?? orElse(),
+      IdleCommand<T>() => idle?.call() ?? orElse?.call(),
+      CancelledCommand<T>() => cancelled?.call() ?? orElse?.call(),
+      RunningCommand<T>() => running?.call() ?? orElse?.call(),
+      FailureCommand<T>(:final error) => failure?.call(error) ?? orElse?.call(),
+      SuccessCommand<T>(:final value) => success?.call(value) ?? orElse?.call(),
     };
   }
 
