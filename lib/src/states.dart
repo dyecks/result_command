@@ -6,31 +6,71 @@ sealed class CommandState<T extends Object> {
 
   /// Maps the current state to a value of type [R] based on the object's state.
   ///
-  /// This method allows you to handle different states of an object (`Idle`, `Cancelled`, `Running`, `Failure`, and `Success`),
-  /// and map each state to a corresponding value of type [R]. If no handler for a specific state is provided, the fallback
-  /// function [orElse] will be invoked.
+  /// This method allows you to handle only specific states, with a required fallback [orElse]
+  /// function for unhandled states. Returns a non-nullable value of type [R].
   ///
-  /// - [success]: Called when the state represents success, receiving a value of type [T] (the successful result).
+  /// - [success]: Called when the state represents success, receiving a value of type [T] (the successful result). Optional.
   /// - [failure]: Called when the state represents failure, receiving an [Exception?]. Optional.
+  /// - [idle]: Called when the state represents idle (not running). Optional.
   /// - [cancelled]: Called when the state represents cancellation. Optional.
   /// - [running]: Called when the state represents a running operation. Optional.
-  /// - [orElse]: A fallback function that is called when the state does not match any of the provided states.
-  ///   It is required and will be used when any of the other parameters are not provided or when no state matches.
+  /// - [orElse]: A required fallback function that is called when the state does not match any of the provided states.
   ///
-  /// Returns a value of type [R] based on the state of the object. If no matching state handler is provided, the fallback
-  /// function [orElse] will be called.
+  /// Returns a non-nullable value of type [R] based on the state of the object.
   ///
   /// Example:
   /// ```dart
-  /// final result = command.value.when<String>(
-  ///   success: (value) => 'Success: $value',
-  ///   failure: (e) => 'Error: ${e?.message}',
-  ///   cancelled: () => 'Cancelled',
-  ///   running: () => 'Running',
-  ///   orElse: () => 'Unknown state',
+  /// return command.state.when<Widget>(
+  ///   success: (value) => Text('Success: $value'),
+  ///   failure: (e) => Text('Error: ${e?.message}'),
+  ///   running: () => CircularProgressIndicator(),
+  ///   orElse: () => Button(
+  ///     onPressed: () => command.execute(),
+  ///     child: Text('Execute'),
+  ///   ),
   /// );
   /// ```
-  R? when<R>({
+  R when<R>({
+    R Function(T value)? success,
+    R Function(Exception? exception)? failure,
+    R Function()? idle,
+    R Function()? running,
+    R Function()? cancelled,
+    required R Function() orElse,
+  }) {
+    return switch (this) {
+      IdleCommand<T>() => idle?.call() ?? orElse(),
+      CancelledCommand<T>() => cancelled?.call() ?? orElse(),
+      RunningCommand<T>() => running?.call() ?? orElse(),
+      FailureCommand<T>(:final error) => failure?.call(error) ?? orElse(),
+      SuccessCommand<T>(:final value) => success?.call(value) ?? orElse(),
+    };
+  }
+
+  /// Maps the current state to a value of type [R] based on the object's state.
+  ///
+  /// This method allows you to handle only specific states. All parameters are optional,
+  /// and returns a nullable value of type [R?]. If no handler matches the current state,
+  /// returns null (or the result of [orElse] if provided).
+  ///
+  /// - [success]: Called when the state represents success, receiving a value of type [T] (the successful result). Optional.
+  /// - [failure]: Called when the state represents failure, receiving an [Exception?]. Optional.
+  /// - [idle]: Called when the state represents idle (not running). Optional.
+  /// - [cancelled]: Called when the state represents cancellation. Optional.
+  /// - [running]: Called when the state represents a running operation. Optional.
+  /// - [orElse]: A fallback function that is called when the state does not match any of the provided states. Optional.
+  ///
+  /// Returns a nullable value of type [R?] based on the state of the object.
+  ///
+  /// Example:
+  /// ```dart
+  /// await command.execute();
+  /// command.state.maybeWhen(
+  ///   success: (value) => context.go('/success'),
+  ///   failure: (e) => showErrorSnackBar(e),
+  /// );
+  /// ```
+  R? maybeWhen<R>({
     R Function(T value)? success,
     R Function(Exception? exception)? failure,
     R Function()? idle,

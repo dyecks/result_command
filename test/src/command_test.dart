@@ -440,7 +440,7 @@ void main() {
 
       await command.execute();
 
-      final result = command.state.when(
+      final result = command.state.maybeWhen(
         success: (_) => 'none',
         failure: (exception) => exception.toString(),
         running: () => 'running',
@@ -456,7 +456,7 @@ void main() {
 
       await command.execute();
 
-      final result = command.state.when(
+      final result = command.state.maybeWhen(
         success: (value) => value,
         failure: (exception) => exception.toString(),
         running: () => 'running',
@@ -475,7 +475,7 @@ void main() {
 
       await command.execute('param');
 
-      final result = command.state.when(
+      final result = command.state.maybeWhen(
         running: () => 'running',
         success: (value) => value,
         failure: (exception) => exception.toString(),
@@ -492,7 +492,7 @@ void main() {
 
       await command.execute();
 
-      final result = command.state.when<String>(
+      final result = command.state.maybeWhen<String>(
         success: (value) => 'otherValue',
         orElse: () => 'default value',
       );
@@ -521,6 +521,288 @@ void main() {
       ));
 
       command1.execute().then((_) => command2.execute());
+    });
+
+    group('.when() method tests', () {
+      setUp(() {
+        // Reset the global observer to avoid interference with other tests
+        Command.setObserverListener((state) {});
+      });
+
+      test('when() handles success state correctly', () async {
+        final command = Command0<String>(() async => const Success('success value'));
+
+        await command.execute();
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Unknown',
+        );
+
+        expect(result, 'Success: success value');
+      });
+
+      test('when() handles failure state correctly', () async {
+        final command = Command0<String>(() async => Failure(Exception('error')));
+
+        await command.execute();
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Unknown',
+        );
+
+        expect(result, 'Failure: Exception: error');
+      });
+
+      test('when() handles idle state correctly', () async {
+        final command = Command0<String>(() async => const Success('success'));
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Unknown',
+        );
+
+        expect(result, 'Idle');
+      });
+
+      test('when() handles running state correctly', () async {
+        final command = Command0<String>(() async {
+          await Future.delayed(const Duration(milliseconds: 100));
+          return const Success('success');
+        });
+
+        final executeFuture = command.execute();
+
+        // Check state during execution
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Unknown',
+        );
+
+        expect(result, 'Running');
+
+        await executeFuture;
+      });
+
+      test('when() handles cancelled state correctly', () async {
+        final command = Command0<String>(() async {
+          await Future.delayed(const Duration(milliseconds: 100));
+          return const Success('success');
+        });
+
+        final executeFuture = command.execute();
+        await Future.delayed(const Duration(milliseconds: 10));
+        command.cancel();
+
+        await executeFuture;
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Unknown',
+        );
+
+        expect(result, 'Cancelled');
+      });
+
+      test('when() calls orElse when success handler is not provided', () async {
+        final command = Command0<String>(() async => const Success('success'));
+
+        await command.execute();
+
+        final result = command.state.when<String>(
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Default from orElse',
+        );
+
+        expect(result, 'Default from orElse');
+      });
+
+      test('when() calls orElse when failure handler is not provided', () async {
+        final command = Command0<String>(() async => Failure(Exception('error')));
+
+        await command.execute();
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Default from orElse',
+        );
+
+        expect(result, 'Default from orElse');
+      });
+
+      test('when() calls orElse when idle handler is not provided', () async {
+        final command = Command0<String>(() async => const Success('success'));
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Default from orElse',
+        );
+
+        expect(result, 'Default from orElse');
+      });
+
+      test('when() calls orElse when running handler is not provided', () async {
+        final command = Command0<String>(() async {
+          await Future.delayed(const Duration(milliseconds: 100));
+          return const Success('success');
+        });
+
+        final executeFuture = command.execute();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Default from orElse',
+        );
+
+        expect(result, 'Default from orElse');
+
+        await executeFuture;
+      });
+
+      test('when() calls orElse when cancelled handler is not provided', () async {
+        final command = Command0<String>(() async {
+          await Future.delayed(const Duration(milliseconds: 100));
+          return const Success('success');
+        });
+
+        final executeFuture = command.execute();
+        await Future.delayed(const Duration(milliseconds: 10));
+        command.cancel();
+
+        await executeFuture;
+
+        final result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          orElse: () => 'Default from orElse',
+        );
+
+        expect(result, 'Default from orElse');
+      });
+
+      test('when() returns non-nullable value', () async {
+        final command = Command0<String>(() async => const Success('success'));
+
+        await command.execute();
+
+        // This should compile without ! operator
+        final String result = command.state.when<String>(
+          success: (value) => 'Success: $value',
+          failure: (e) => 'Failure: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Default',
+        );
+
+        expect(result, isA<String>());
+        expect(result, 'Success: success');
+      });
+
+      test('when() works with different return types (Widget example)', () async {
+        final command = Command0<String>(() async => const Success('data'));
+
+        await command.execute();
+
+        final result = command.state.when<int>(
+          success: (value) => value.length,
+          failure: (e) => 0,
+          idle: () => -1,
+          running: () => -2,
+          cancelled: () => -3,
+          orElse: () => -4,
+        );
+
+        expect(result, 4); // 'data'.length = 4
+      });
+
+      test('when() with only orElse always returns orElse value', () async {
+        final command = Command0<String>(() async => const Success('success'));
+
+        await command.execute();
+
+        final result = command.state.when<String>(
+          orElse: () => 'Only orElse',
+        );
+
+        expect(result, 'Only orElse');
+      });
+
+      test('when() with Command1 handles success with value', () async {
+        final command = Command1<String, int>(
+          (int value) async => Success('Number: $value'),
+        );
+
+        await command.execute(42);
+
+        final result = command.state.when<String>(
+          success: (value) => 'Got: $value',
+          failure: (e) => 'Error: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Default',
+        );
+
+        expect(result, 'Got: Number: 42');
+      });
+
+      test('when() with Command2 handles success with multiple parameters', () async {
+        final command = Command2<String, int, String>(
+          (int a, String b) async => Success('$a-$b'),
+        );
+
+        await command.execute(10, 'test');
+
+        final result = command.state.when<String>(
+          success: (value) => 'Result: $value',
+          failure: (e) => 'Error: $e',
+          idle: () => 'Idle',
+          running: () => 'Running',
+          cancelled: () => 'Cancelled',
+          orElse: () => 'Default',
+        );
+
+        expect(result, 'Result: 10-test');
+      });
     });
   });
 
