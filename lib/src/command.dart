@@ -55,8 +55,9 @@ sealed class Command<T extends Object> extends ChangeNotifier
   CommandState<T> get state => _state;
 
   /// Prefer using the `state` property instead.
-  /// Used for implementation with ValueListenable interface.
+  /// Used only for implementation with ValueListenable interface.
   @override
+  @Deprecated('Use the `state` property instead.')
   CommandState<T> get value => _state;
 
   /// Filters the current command state and returns a ValueListenable with the transformed value.
