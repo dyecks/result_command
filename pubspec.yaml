@@ -1,6 +1,6 @@
 name: result_command
 description: "A command pattern implementation for Dart and Flutter using result_dart package."
-version: 2.1.0
+version: 2.1.1 # Fork baseado na versão 2.1.0 do package. Assim, nossa versão própria apenas alterna a última casa.
 repository: https://github.com/Flutterando/result_command
 
 environment:
