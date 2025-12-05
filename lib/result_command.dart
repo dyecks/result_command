@@ -39,14 +39,14 @@
 ///- **`CancelledCommand`**: The action was explicitly stopped.
 ///
 ///### Accessing the State
-///You can access the current state using the `value` property of the command:
+///You can access the current state using the `state` property of the command:
 ///```dart
 ///final command = Command0<String>(() async {
 ///  return Success('Hello, World!');
 ///});
 ///
 ///// The current state of the command.
-///print(command.value); // Outputs: SuccessCommand<String>
+///print(command.state); // Outputs: SuccessCommand<String>
 ///```
 ///
 ///### Reacting to State Changes

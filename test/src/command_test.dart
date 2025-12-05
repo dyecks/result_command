@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:result_command/src/command.dart';
+
 import 'package:result_dart/result_dart.dart';
+
+import 'package:result_command/src/command.dart';
 
 void main() {
   group('Command tests', () {
@@ -82,7 +84,7 @@ void main() {
       ]);
 
       expect(command.state, isA<SuccessCommand<String>>());
-      expect((command.state as SuccessCommand<String>).value, 'Test');
+      expect((command.state as SuccessCommand<String>).data, 'Test');
 
       // Verify history
       final history = command.stateHistory;
@@ -294,7 +296,7 @@ void main() {
 
       await command.execute('input');
       expect(command.state, isA<SuccessCommand<String>>());
-      expect((command.state as SuccessCommand<String>).value, 'INPUT');
+      expect((command.state as SuccessCommand<String>).data, 'INPUT');
 
       // Verify history
       final history = command.stateHistory;
@@ -323,7 +325,7 @@ void main() {
 
       await command.execute('Value', 42);
       expect(command.state, isA<SuccessCommand<String>>());
-      expect((command.state as SuccessCommand<String>).value, 'Value 42');
+      expect((command.state as SuccessCommand<String>).data, 'Value 42');
 
       // Verify history
       final history = command.stateHistory;
@@ -976,6 +978,170 @@ void main() {
 
       expect(commandCompleted, isTrue);
       expect(command.state, isA<SuccessCommand<String>>());
+    });
+  });
+
+  group('ifState methods', () {
+    test('ifIdle executes action when state is IdleCommand', () {
+      final command = Command0<String>(() async => const Success('test'));
+      var idleCalled = false;
+
+      command.state.ifIdle(() => idleCalled = true);
+
+      expect(idleCalled, isTrue);
+    });
+
+    test('ifIdle does not execute action when state is not IdleCommand',
+        () async {
+      final command = Command0<String>(() async {
+        await Future.delayed(const Duration(milliseconds: 100));
+        return const Success('test');
+      });
+      var idleCalled = false;
+
+      await command.execute();
+      command.state.ifIdle(() => idleCalled = true);
+
+      expect(idleCalled, isFalse);
+    });
+
+    test('ifRunning executes action when state is RunningCommand', () async {
+      final command = Command0<String>(() async {
+        await Future.delayed(const Duration(milliseconds: 100));
+        return const Success('test');
+      });
+      var runningCalled = false;
+
+      command.addListener(() {
+        command.state.ifRunning(() => runningCalled = true);
+      });
+
+      await command.execute();
+
+      expect(runningCalled, isTrue);
+    });
+
+    test('ifRunning does not execute action when state is not RunningCommand',
+        () {
+      final command = Command0<String>(() async => const Success('test'));
+      var runningCalled = false;
+
+      command.state.ifRunning(() => runningCalled = true);
+
+      expect(runningCalled, isFalse);
+    });
+
+    test('ifSuccess executes action with data when state is SuccessCommand',
+        () async {
+      final command = Command0<String>(() async => const Success('success'));
+      String? receivedData;
+
+      await command.execute();
+      command.state.ifSuccess((data) => receivedData = data);
+
+      expect(receivedData, 'success');
+    });
+
+    test(
+        'ifSuccess does not execute action when state is not SuccessCommand',
+        () {
+      final command = Command0<String>(() async => const Success('test'));
+      String? receivedData;
+
+      command.state.ifSuccess((data) => receivedData = data);
+
+      expect(receivedData, isNull);
+    });
+
+    test('ifFailure executes action with error when state is FailureCommand',
+        () async {
+      final command = Command0<String>(
+          () async => Failure(Exception('test error')));
+      Exception? receivedError;
+
+      await command.execute();
+      command.state.ifFailure((error) => receivedError = error);
+
+      expect(receivedError, isA<Exception>());
+      expect(receivedError.toString(), contains('test error'));
+    });
+
+    test(
+        'ifFailure does not execute action when state is not FailureCommand',
+        () async {
+      final command = Command0<String>(() async => const Success('test'));
+      Exception? receivedError;
+
+      await command.execute();
+      command.state.ifFailure((error) => receivedError = error);
+
+      expect(receivedError, isNull);
+    });
+
+    test('ifCancelled executes action when state is CancelledCommand',
+        () async {
+      final command = Command0<String>(() async {
+        await Future.delayed(const Duration(seconds: 1));
+        return const Success('test');
+      });
+      var cancelledCalled = false;
+
+      Future.delayed(
+          const Duration(milliseconds: 50), () => command.cancel());
+
+      await command.execute();
+      command.state.ifCancelled(() => cancelledCalled = true);
+
+      expect(cancelledCalled, isTrue);
+    });
+
+    test(
+        'ifCancelled does not execute action when state is not CancelledCommand',
+        () async {
+      final command = Command0<String>(() async => const Success('test'));
+      var cancelledCalled = false;
+
+      await command.execute();
+      command.state.ifCancelled(() => cancelledCalled = true);
+
+      expect(cancelledCalled, isFalse);
+    });
+
+    test('multiple ifState methods can be chained', () async {
+      final command = Command0<String>(() async => const Success('data'));
+      var successCalled = false;
+      var failureCalled = false;
+
+      await command.execute();
+
+      command.state
+        ..ifSuccess((data) => successCalled = true)
+        ..ifFailure((error) => failureCalled = true);
+
+      expect(successCalled, isTrue);
+      expect(failureCalled, isFalse);
+    });
+
+    test('ifState methods work with Command1', () async {
+      final command =
+          Command1<int, int>((value) async => Success(value * 2));
+      int? receivedData;
+
+      await command.execute(5);
+      command.state.ifSuccess((data) => receivedData = data);
+
+      expect(receivedData, 10);
+    });
+
+    test('ifState methods work with Command2', () async {
+      final command = Command2<String, String, int>(
+          (a, b) async => Success('$a: $b'));
+      String? receivedData;
+
+      await command.execute('Count', 42);
+      command.state.ifSuccess((data) => receivedData = data);
+
+      expect(receivedData, 'Count: 42');
     });
   });
 }

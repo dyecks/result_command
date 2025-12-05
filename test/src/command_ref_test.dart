@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:result_command/src/command.dart';
+
 import 'package:result_dart/result_dart.dart';
+
+import 'package:result_command/src/command.dart';
 
 void main() {
   test('Command Ref', () {
@@ -15,7 +17,7 @@ void main() {
     commandRef.addListener(expectAsync0(() {
       final status = commandRef.state;
       if (status is SuccessCommand<int>) {
-        expect(status.value, 10);
+        expect(status.data, 10);
       }
     }, count: 2));
 

@@ -4,12 +4,22 @@ part of 'command.dart';
 sealed class CommandState<T extends Object> {
   const CommandState();
 
+  /// Returns the current state as a string representation.
+  /// This is useful for debugging and logging purposes.
+  String get instanceName;
+
+  bool get isIdle => this is IdleCommand<T>;
+  bool get isRunning => this is RunningCommand<T>;
+  bool get isSuccess => this is SuccessCommand<T>;
+  bool get isFailure => this is FailureCommand<T>;
+  bool get isCancelled => this is CancelledCommand<T>;
+
   /// Maps the current state to a value of type [R] based on the object's state.
   ///
   /// This method allows you to handle only specific states, with a required fallback [orElse]
   /// function for unhandled states. Returns a non-nullable value of type [R].
   ///
-  /// - [success]: Called when the state represents success, receiving a value of type [T] (the successful result). Optional.
+  /// - [success]: Called when the state represents success, receiving the data of type [T] (the successful result). Optional.
   /// - [failure]: Called when the state represents failure, receiving an [Exception?]. Optional.
   /// - [idle]: Called when the state represents idle (not running). Optional.
   /// - [cancelled]: Called when the state represents cancellation. Optional.
@@ -21,7 +31,7 @@ sealed class CommandState<T extends Object> {
   /// Example:
   /// ```dart
   /// return command.state.when<Widget>(
-  ///   success: (value) => Text('Success: $value'),
+  ///   success: (data) => Text('Success: $data'),
   ///   failure: (e) => Text('Error: ${e?.message}'),
   ///   running: () => CircularProgressIndicator(),
   ///   orElse: () => Button(
@@ -31,7 +41,7 @@ sealed class CommandState<T extends Object> {
   /// );
   /// ```
   R when<R>({
-    R Function(T value)? success,
+    R Function(T data)? success,
     R Function(Exception? exception)? failure,
     R Function()? idle,
     R Function()? running,
@@ -43,7 +53,7 @@ sealed class CommandState<T extends Object> {
       CancelledCommand<T>() => cancelled?.call() ?? orElse(),
       RunningCommand<T>() => running?.call() ?? orElse(),
       FailureCommand<T>(:final error) => failure?.call(error) ?? orElse(),
-      SuccessCommand<T>(:final value) => success?.call(value) ?? orElse(),
+      SuccessCommand<T>(:final data) => success?.call(data) ?? orElse(),
     };
   }
 
@@ -53,7 +63,7 @@ sealed class CommandState<T extends Object> {
   /// and returns a nullable value of type [R?]. If no handler matches the current state,
   /// returns null (or the result of [orElse] if provided).
   ///
-  /// - [success]: Called when the state represents success, receiving a value of type [T] (the successful result). Optional.
+  /// - [success]: Called when the state represents success, receiving the data of type [T] (the successful result). Optional.
   /// - [failure]: Called when the state represents failure, receiving an [Exception?]. Optional.
   /// - [idle]: Called when the state represents idle (not running). Optional.
   /// - [cancelled]: Called when the state represents cancellation. Optional.
@@ -66,12 +76,12 @@ sealed class CommandState<T extends Object> {
   /// ```dart
   /// await command.execute();
   /// command.state.maybeWhen(
-  ///   success: (value) => context.go('/success'),
+  ///   success: (data) => context.go('/success'),
   ///   failure: (e) => showErrorSnackBar(e),
   /// );
   /// ```
   R? maybeWhen<R>({
-    R Function(T value)? success,
+    R Function(T data)? success,
     R Function(Exception? exception)? failure,
     R Function()? idle,
     R Function()? running,
@@ -83,19 +93,69 @@ sealed class CommandState<T extends Object> {
       CancelledCommand<T>() => cancelled?.call() ?? orElse?.call(),
       RunningCommand<T>() => running?.call() ?? orElse?.call(),
       FailureCommand<T>(:final error) => failure?.call(error) ?? orElse?.call(),
-      SuccessCommand<T>(:final value) => success?.call(value) ?? orElse?.call(),
+      SuccessCommand<T>(:final data) => success?.call(data) ?? orElse?.call(),
     };
   }
 
-  /// Returns the current state as a string representation.
-  /// This is useful for debugging and logging purposes.
-  String get instanceName;
+  /// Executes [action] if this is an [IdleCommand].
+  ///
+  /// Example:
+  /// ```dart
+  /// command.state.ifIdle(() => print('Command is idle'));
+  /// ```
+  void ifIdle(void Function() action) {
+    if (this case IdleCommand<T>()) {
+      action();
+    }
+  }
 
-  bool get isIdle => this is IdleCommand<T>;
-  bool get isRunning => this is RunningCommand<T>;
-  bool get isSuccess => this is SuccessCommand<T>;
-  bool get isFailure => this is FailureCommand<T>;
-  bool get isCancelled => this is CancelledCommand<T>;
+  /// Executes [action] if this is a [RunningCommand].
+  ///
+  /// Example:
+  /// ```dart
+  /// command.state.ifRunning(() => showLoadingIndicator());
+  /// ```
+  void ifRunning(void Function() action) {
+    if (this case RunningCommand<T>()) {
+      action();
+    }
+  }
+
+  /// Executes [action] if this is a [SuccessCommand], passing the [data].
+  ///
+  /// Example:
+  /// ```dart
+  /// command.state.ifSuccess((data) => showData(data));
+  /// ```
+  void ifSuccess(void Function(T data) action) {
+    if (this case SuccessCommand<T>(:final data)) {
+      action(data);
+    }
+  }
+
+  /// Executes [action] if this is a [FailureCommand], passing the [error].
+  ///
+  /// Example:
+  /// ```dart
+  /// command.state.ifFailure((error) => showError(context, error));
+  /// ```
+  void ifFailure(void Function(Exception error) action) {
+    if (this case FailureCommand<T>(:final error)) {
+      action(error);
+    }
+  }
+
+  /// Executes [action] if this is a [CancelledCommand].
+  ///
+  /// Example:
+  /// ```dart
+  /// command.state.ifCancelled(() => showCancelledMessage());
+  /// ```
+  void ifCancelled(void Function() action) {
+    if (this case CancelledCommand<T>()) {
+      action();
+    }
+  }
 }
 
 /// Represents the idle state of a command (not running).
@@ -136,11 +196,11 @@ final class FailureCommand<T extends Object> extends CommandState<T> {
 
 /// Represents a command that executed successfully.
 final class SuccessCommand<T extends Object> extends CommandState<T> {
-  /// Creates a [SuccessCommand] with the given [value].
-  const SuccessCommand(this.value);
+  /// Creates a [SuccessCommand] with the given [data].
+  const SuccessCommand(this.data);
 
   /// The result of the successful execution.
-  final T value;
+  final T data;
 
   @override
   final String instanceName = 'SuccessCommand';

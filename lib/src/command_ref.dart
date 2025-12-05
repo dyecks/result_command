@@ -18,9 +18,9 @@ part of 'command.dart';
 /// );
 ///
 /// commandRef.addListener(() {
-///   final status = commandRef.value;
+///   final status = commandRef.state;
 ///   if (status is SuccessCommand<int>) {
-///     print('Result: ${status.value}');
+///     print('Result: ${status.data}');
 ///   }
 /// });
 ///

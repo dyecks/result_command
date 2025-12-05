@@ -52,7 +52,7 @@ Commands are `Listenable`, meaning you can react to their state changes:
 fetchGreetingCommand.addListener(() {
   final state = fetchGreetingCommand.state;
   if (state is SuccessCommand<String>) {
-    print('Success: ${state.value}');
+    print('Success: ${state.data}');
   } else if (state is FailureCommand<String>) {
     print('Failure: ${state.error}');
   }
@@ -67,7 +67,7 @@ Widget build(BuildContext context) {
     builder: (context, _) {
       return switch (state) {
         RunningCommand<String>() => CircularProgressIndicator(),
-        SuccessCommand<String>(:final value) => Text('Success: $value'),
+        SuccessCommand<String>(:final data) => Text('Success: $data'),
         FailureCommand<String>(:final error) => Text('Failure: $error'),
         _ => ElevatedButton(
           onPressed: () => fetchGreetingCommand.execute(),
@@ -84,7 +84,7 @@ The `when` method simplifies state management by mapping each state to a specifi
 ```dart
 fetchGreetingCommand.addListener(() {
   final message = fetchGreetingCommand.state.when(
-    success: (value) => 'Success: $value',
+    success: (data) => 'Success: $data',
     failure: (exception) => 'Error: ${exception?.message}',
     idle: () => 'Idle',
     running: () => 'Running...',
@@ -183,7 +183,7 @@ final filteredValue = command.filter<String>(
   'Default Value',
   (state) {
     if (state is SuccessCommand<String>) {
-      return 'Success: ${state.value}';
+      return 'Success: ${state.data}';
     } else if (state is FailureCommand<String>) {
       return 'Error: ${state.error}';
     }
@@ -200,7 +200,31 @@ This method simplifies state management by allowing you to focus on specific asp
 
 ---
 
-### 7. CommandRef
+### 7. Conditional State Handlers (`ifState` methods)
+
+The `CommandState` class provides convenient methods to execute actions conditionally based on the current state. These methods are useful for side effects like navigation, showing snackbars, or logging.
+
+#### Available Methods:
+- **`ifIdle(action)`**: Executes the action if the state is `IdleCommand`.
+- **`ifRunning(action)`**: Executes the action if the state is `RunningCommand`.
+- **`ifSuccess(action)`**: Executes the action if the state is `SuccessCommand`, passing the `data`.
+- **`ifFailure(action)`**: Executes the action if the state is `FailureCommand`, passing the `error`.
+- **`ifCancelled(action)`**: Executes the action if the state is `CancelledCommand`.
+
+#### Example:
+```dart
+await command.execute();
+
+command.state
+  ..ifSuccess((data) => print('Success: $data'))
+  ..ifFailure((error) => showErrorSnackBar(error));
+```
+
+These methods provide a clean and readable way to handle specific states without requiring a full `when` or `switch` statement.
+
+---
+
+### 8. CommandRef
 
 The `CommandRef` class allows you to create commands that listen to changes in one or more `ValueListenables` and execute actions based on derived values.
 
@@ -214,9 +238,9 @@ final commandRef = CommandRef<int, int>(
 );
 
 commandRef.addListener(() {
-  final status = commandRef.value;
+  final status = commandRef.state;
   if (status is SuccessCommand<int>) {
-    print('Result: ${status.value}');
+    print('Result: ${status.data}');
   }
 });
 

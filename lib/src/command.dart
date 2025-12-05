@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+
 import 'package:result_dart/functions.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -39,11 +40,11 @@ sealed class Command<T extends Object> extends ChangeNotifier
   SuccessCommand<T>? _cachedSuccessCommand;
   FailureCommand<T>? _cachedFailureCommand;
 
-  /// Returns the cached value of the [SuccessCommand], or `null` if not found.
+  /// Returns the cached data of the [SuccessCommand], or `null` if not found.
   ///
-  /// This method retrieves the value associated with a successful command execution
+  /// This method retrieves the data associated with a successful command execution
   /// from the cache. If the command is not a [SuccessCommand], it returns `null`.
-  T? getCachedSuccess() => _cachedSuccessCommand?.value;
+  T? getCachedSuccess() => _cachedSuccessCommand?.data;
 
   /// Returns the cached exception of the [FailureCommand], or `null` if not found.
   ///
@@ -76,7 +77,7 @@ sealed class Command<T extends Object> extends ChangeNotifier
   ///   'Default Value',
   ///   (state) {
   ///     if (state is SuccessCommand<String>) {
-  ///       return 'Success: ${state.value}';
+  ///       return 'Success: ${state.data}';
   ///     } else if (state is FailureCommand<String>) {
   ///       return 'Error: ${state.error}';
   ///     }
@@ -141,7 +142,7 @@ sealed class Command<T extends Object> extends ChangeNotifier
   /// });
   ///
   /// final removeListener = command.addWhenListener(
-  ///   onSuccess: (value) => print('Success: $value'),
+  ///   onSuccess: (data) => print('Success: $data'),
   ///   onFailure: (error) => print('Error: $error'),
   ///   onIdle: () => print('Command is ready'),
   ///   onRunning: () => print('Command is executing'),
@@ -153,7 +154,7 @@ sealed class Command<T extends Object> extends ChangeNotifier
   /// removeListener();
   /// ```
   VoidCallback addWhenListener({
-    void Function(T value)? onSuccess,
+    void Function(T data)? onSuccess,
     void Function(Exception? exception)? onFailure,
     void Function()? onIdle,
     void Function()? onRunning,
@@ -170,8 +171,8 @@ sealed class Command<T extends Object> extends ChangeNotifier
           (onRunning ?? orElse)?.call();
         case FailureCommand<T>(:final error):
           onFailure != null ? onFailure(error) : orElse?.call();
-        case SuccessCommand<T>(:final value):
-          onSuccess != null ? onSuccess(value) : orElse?.call();
+        case SuccessCommand<T>(:final data):
+          onSuccess != null ? onSuccess(data) : orElse?.call();
       }
     }
 

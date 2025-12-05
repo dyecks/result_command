@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:result_command/src/command.dart';
+
 import 'package:result_dart/result_dart.dart';
+
+import 'package:result_command/src/command.dart';
 
 void main() {
   test(
@@ -18,7 +20,7 @@ void main() {
 
       final fiteredSuccess = command.filter(
         0,
-        (value) => value is SuccessCommand<int> ? value.value : null,
+        (value) => value is SuccessCommand<int> ? value.data : null,
       );
 
       fiteredSuccess.addListener(expectAsync0(() {
